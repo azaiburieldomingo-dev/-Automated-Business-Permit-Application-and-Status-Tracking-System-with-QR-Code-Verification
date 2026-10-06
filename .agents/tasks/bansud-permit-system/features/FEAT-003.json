@@ -1,0 +1,53 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Complete HTTP layer: all controllers (applicant/BPLO/admin/public), all Form Requests, full route map in routes/web.php, all Blade views (layouts, auth, applicant, BPLO, admin, public, PDF template), static CSS, and the sandbox webhook. Depends on FEAT-001 (models) and FEAT-002 (services, auth, policies).",
+  "status": "pending",
+  "steps": [
+    "1. Create public/css/app.css: blue (#1d4ed8 / #1e3a8a) and white government portal palette. Mobile-friendly responsive. All layout, form, table, card, badge, button styles. Reference Tailwind CDN in layout as fallback but provide core styles in this file.",
+    "2. Create resources/views/layouts/app.blade.php: base layout with <link href=asset('css/app.css')>, Tailwind CDN script, meta viewport, navigation (role-aware: applicant/BPLO/admin links), notification bell with unread count, flash messages, @yield('content'). No vite() or mix().",
+    "3. Create resources/views/layouts/guest.blade.php: minimal layout for public pages + auth (no nav sidebar, just header/footer).",
+    "4. Create auth views: resources/views/auth/register.blade.php, login.blade.php, forgot-password.blade.php, reset-password.blade.php. Simple forms, CSRF, validation error display.",
+    "5. Create applicant controllers: app/Http/Controllers/Applicant/DashboardController.php (index: list applications + status + unread notifications count). ApplicationController.php (create/store/edit/update/summary/submit/show — multi-section form for business info, uses Policy gates, submit calls ApplicationWorkflowService::submit). RequirementController.php (upload with UploadRequirementRequest, remove, file download via Storage::disk('local')->download with Policy check). PaymentController.php (show fee breakdown only if APPROVED_FOR_PAYMENT, start payment via PaymentService, history). PermitController.php (show permit + inline SVG QR, download PDF via PermitPolicy::download).",
+    "6. Create applicant Form Requests: app/Http/Requests/ApplicationRequest.php (all snapshot fields validated per design), app/Http/Requests/UploadRequirementRequest.php (file required, mimes from config, max from config, requirement_type_id exists+active), app/Http/Requests/PaymentStartRequest.php (method required, in enabled methods from config).",
+    "7. Create applicant views: resources/views/applicant/dashboard.blade.php (applications table with status badges), create.blade.php + edit.blade.php (multi-section form: applicant info, business info, requirements upload per-item), summary.blade.php (review before submit with all info + requirements checklist), show.blade.php (status timeline, remarks, payment info, permit availability link).",
+    "8. Create BPLO controllers: app/Http/Controllers/Bplo/DashboardController.php (7 counter cards: Total, Pending Review, For Correction, Approved, Awaiting Payment, Paid, Released). ApplicationController.php (index with search/filter by tracking_number+applicant_name+business_name+date, sort, paginate; show full review view with applicant info, business info, uploaded requirements with view/download links, history, remarks; beginReview POST; approve POST; returnForCorrection POST with ReviewActionRequest; reject POST with ReviewActionRequest; flagRequirement POST per-item checklist update; file download for staff). PaymentController.php (confirm: calls PaymentService::verify to simulate verification). PermitController.php (release: calls PermitService::release; regenerate: calls PermitService::regenerate).",
+    "9. Create app/Http/Requests/ReviewActionRequest.php: remark required string max:2000.",
+    "10. Create BPLO views: resources/views/bplo/dashboard.blade.php (7 stat cards), index.blade.php (searchable/filterable/sortable/paginated table), show.blade.php (full application review: info sections, requirements with checklist status + flag buttons, history timeline, remarks, action buttons — Approve/Return/Reject).",
+    "11. Create admin controllers: app/Http/Controllers/Admin/DashboardController.php (cards: Total Users, Total Applications, Total Permits, Total Payments, Active Permits, Expired Permits, Recent Activities list). UserController.php (CRUD: index/create/store/edit/update — can set role, activate/deactivate, cannot delete self). RequirementTypeController.php (CRUD). FeeTypeController.php (CRUD). FeeRateController.php (CRUD: edit amounts, toggle active). SettingController.php (read-only display of all config('permit.*') values). AuditLogController.php (index: filter by action/actor/date, paginate).",
+    "12. Create admin Form Requests: app/Http/Requests/Admin/UserRequest.php, RequirementTypeRequest.php, FeeTypeRequest.php, FeeRateRequest.php.",
+    "13. Create admin views: resources/views/admin/dashboard.blade.php, users/ (index, create, edit), requirement-types/ (index, create, edit), fee-types/ (index, create, edit), fee-rates/ (index, create, edit), settings.blade.php (read-only config display), audit-logs/index.blade.php (filterable table).",
+    "14. Create public controllers: app/Http/Controllers/PublicPages/LandingController.php (index: title 'Municipality of Bansud — Automated Business Permit Application and Status Tracking System', 4 buttons, 4-step explainer). TrackingController.php (show: form for tracking_number + verifier email/last-name; lookup POST: validate via TrackingLookupRequest, find application by tracking_number + match email or applicant last name, return status/timeline/remarks/payment/permit availability — NO sensitive PII). VerificationController.php (show: lookup permit by token, classify VALID/EXPIRED/REVOKED/NOT_FOUND, display only permit_number+business_name+business_address+status+issued_at+valid_until per RA 10173, log qr_verifications row).",
+    "15. Create app/Http/Requests/TrackingLookupRequest.php: tracking_number required regex built from config('permit.tracking_prefix'), verifier required string.",
+    "16. Create app/Http/Controllers/PublicPages/SandboxWebhookController.php: handle POST — guard config('permit.payment.mode')==='sandbox'; if webhook_secret is empty/null return 503; compute hash_hmac('sha256', $request->getContent(), config('permit.payment.webhook_secret')), compare with X-Sandbox-Signature via hash_equals(); 401 on mismatch; on match call PaymentService::verify(); return 200.",
+    "17. Create public views: resources/views/public/landing.blade.php (hero, 4 action buttons, 4-step process cards), track.blade.php (search form + results), verify.blade.php (mobile-friendly result: VALID green / EXPIRED yellow / REVOKED red / NOT_FOUND gray, minimal data).",
+    "18. Create resources/views/permits/pdf.blade.php: formal government-document layout — header 'Municipality of Bansud / Oriental Mindoro' from config, permit number, business name, owner, address, nature, issued date, valid until, QR embedded as base64 data:image/svg+xml;base64,... <img> via PermitService::qrDataUri(). Inline CSS only (dompdf constraint).",
+    "19. Create resources/views/permits/show.blade.php: browser view of the permit with inline SVG QR (rendered directly by simple-qrcode, not data-URI) and Download PDF / Print buttons.",
+    "20. Wire routes/web.php: group all routes by middleware exactly per the design Route Map. Public routes (/, /track, /verify/{token}) with throttles. Auth guest routes (/register, /login, /logout, /forgot-password, /reset-password). Applicant routes under auth+role:applicant prefix. BPLO routes under auth+role:bplo,admin prefix /bplo. Admin routes under auth+role:admin prefix /admin. Sandbox webhook POST /sandbox/payments/{payment}/webhook with throttle. Ensure CSRF is excluded for webhook via VerifyCsrfToken or middleware config.",
+    "21. Create resources/views/components/ for reusable Blade components: status-badge (color per status), notification-bell, pagination, flash-messages.",
+    "22. Update resources/views/welcome.blade.php to redirect to the landing page or replace with the landing page content (the / route now maps to LandingController)."
+  ],
+  "acceptance_criteria": [
+    "php artisan route:list shows all routes matching the design Route Map exactly",
+    "All routes are grouped with correct middleware (auth, role:applicant, role:bplo,admin, role:admin, throttle)",
+    "The landing page renders at / with the correct title and 4 action buttons",
+    "Applicant can register, login, create application, upload requirements, view summary, submit (gets tracking number)",
+    "BPLO dashboard shows 7 counter cards",
+    "Admin can manage users, requirement types, fee types/rates, view audit logs, view settings",
+    "/track requires tracking number + verifier, shows status only (no PII)",
+    "/verify/{token} classifies VALID/EXPIRED/REVOKED/NOT_FOUND and shows minimal data",
+    "Sandbox webhook validates HMAC signature correctly (200/401/503 responses)",
+    "Permit PDF renders with embedded SVG QR data-URI",
+    "All file uploads go to local (private) disk, served only via authorized controllers",
+    "CSRF token present on all forms; webhook route excluded from CSRF"
+  ],
+  "verification": [
+    "php artisan config:clear",
+    "php artisan migrate:fresh --seed",
+    "php artisan route:list (all design routes present)",
+    "php artisan test (green — existing tests still pass)",
+    "Manual smoke: php artisan serve then navigate to http://localhost:8000 — landing page renders"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

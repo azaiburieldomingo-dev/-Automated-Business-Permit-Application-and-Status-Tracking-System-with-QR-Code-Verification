@@ -1,0 +1,45 @@
+{
+  "id": "FEAT-004",
+  "type": "test",
+  "description": "Complete test suite: unit tests for all services and feature tests for all flows. Depends on FEAT-001 (models), FEAT-002 (services), and FEAT-003 (controllers/routes/views). Remove the two Example tests.",
+  "status": "pending",
+  "steps": [
+    "1. Delete tests/Feature/ExampleTest.php and tests/Unit/ExampleTest.php.",
+    "2. Create tests/Unit/Services/TrackingNumberServiceTest.php: test format is BANSUD-YYYY-000001, sequential gap-free for multiple calls in same year, new year resets sequence. Mock or use in-memory DB.",
+    "3. Create tests/Unit/Services/PermitNumberServiceTest.php: same pattern as tracking, format BP-YYYY-000001.",
+    "4. Create tests/Unit/Services/ApplicationWorkflowServiceTest.php: test all legal transitions succeed, all illegal transitions throw InvalidStatusTransitionException, history row created on each transition, audit log row created.",
+    "5. Create tests/Unit/Services/FeeComputationServiceTest.php: test computes correct breakdown and total from fee_rates, handles empty rates (zero total + warning logged).",
+    "6. Create tests/Unit/Services/SandboxGatewayTest.php: test initiate() returns processing status + SANDBOX reference, NEVER returns paid. Test verify() returns paid+verified.",
+    "7. Create tests/Unit/Services/LogSmsChannelTest.php: test send() returns status=logged, message appears in Laravel log.",
+    "8. Create tests/Feature/Auth/RegistrationTest.php: test successful registration creates user with role=applicant, test role=admin in input is ignored (still applicant), test validation errors.",
+    "9. Create tests/Feature/Auth/LoginTest.php: test successful login redirects by role, test inactive user blocked, test throttle after 5 failed attempts, test logout.",
+    "10. Create tests/Feature/Applicant/ApplicationFlowTest.php: full happy path — create draft, upload requirements, view summary, submit (assert tracking number format), view status. Test cannot submit without required requirements. Test resubmit from FOR_CORRECTION keeps same tracking number.",
+    "11. Create tests/Feature/Applicant/RequirementUploadTest.php: test upload stores on local disk, test wrong mime rejected, test file >4MB rejected, test non-owner cannot download.",
+    "12. Create tests/Feature/Bplo/ReviewFlowTest.php: test begin review (SUBMITTED->UNDER_REVIEW), approve (->APPROVED_FOR_PAYMENT), return for correction (remark required, ->FOR_CORRECTION), reject (remark required, ->REJECTED). Test applicant cannot access BPLO routes (403).",
+    "13. Create tests/Feature/Payment/PaymentFlowTest.php: test start payment only from APPROVED_FOR_PAYMENT, test Pay button alone does NOT release permit, test BPLO confirm payment -> PAYMENT_VERIFIED, test payment history shows attempts.",
+    "14. Create tests/Feature/Payment/SandboxWebhookTest.php: test 200 with correct HMAC signature verifies payment, test 401 with bad/missing signature, test 503 when PAYMENT_WEBHOOK_SECRET is empty.",
+    "15. Create tests/Feature/Permit/PermitTest.php: test release only from PAYMENT_VERIFIED (throws otherwise), test permit PDF is non-empty, test QR data-URI is embedded (SVG base64), test QR URL matches ^https?://[^:]+(:\\d+)?/verify/[A-Za-z0-9]+$, test applicant can download own permit, test non-owner cannot.",
+    "16. Create tests/Feature/PublicPages/TrackingTest.php: test lookup with correct tracking_number+verifier shows status (no PII like contact number or DTI), test wrong verifier gets error, test throttle.",
+    "17. Create tests/Feature/PublicPages/VerificationTest.php: test VALID permit shows only permitted fields (permit_number, business_name, business_address, status, issued_at, valid_until — no email/contact), test EXPIRED shows expired, test NOT_FOUND for bad token, test qr_verifications row logged, test throttle.",
+    "18. Create tests/Feature/Notification/NotificationTest.php: test notification row created synchronously (no queue worker) after status change with QUEUE_CONNECTION=database. Test in-app notification exists immediately after ApplicationWorkflowService::submit().",
+    "19. Create tests/Feature/Admin/UserManagementTest.php: test admin can create/edit users with roles, test non-admin gets 403, test admin cannot deactivate self.",
+    "20. Create tests/Feature/Admin/FeeManagementTest.php: test CRUD fee types + rates, test amounts are data not constants.",
+    "21. Create tests/Feature/Authorization/RoleMiddlewareTest.php: test applicant cannot access /bplo/* (403), test BPLO cannot access /admin/* (403), test admin can access both, test unauthenticated redirects to login.",
+    "22. Create tests/Feature/Authorization/MassAssignmentTest.php: test User::create with role=admin input still creates applicant (role not mass-assignable).",
+    "23. Create tests/Feature/RaceConditionTest.php: test submitting 5 applications in same year yields strictly increasing gap-free tracking numbers."
+  ],
+  "acceptance_criteria": [
+    "php artisan test runs with ALL tests passing (zero failures, zero errors)",
+    "No Example tests remain",
+    "At least one test per critical invariant: no skip BPLO approval, no pay-to-release, no permit before PAYMENT_VERIFIED, role not mass-assignable, synchronous notifications, SVG-only QR, webhook HMAC, race-safe numbering",
+    "vendor\\bin\\pint --test passes (code style clean)"
+  ],
+  "verification": [
+    "php artisan test (full suite green)",
+    "php artisan test --testsuite=Unit (unit tests green)",
+    "php artisan test --testsuite=Feature (feature tests green)",
+    "vendor\\bin\\pint --test (code style passes)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

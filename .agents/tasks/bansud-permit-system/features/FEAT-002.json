@@ -1,0 +1,51 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Domain services, auth controllers, authorization (policies + middleware enforcement), and the event/listener notification pipeline. Depends on FEAT-001 (models, migrations, middleware registration must exist).",
+  "status": "pending",
+  "steps": [
+    "1. Create app/Exceptions/InvalidStatusTransitionException.php: extends RuntimeException, holds from/to statuses, message 'Invalid status transition from {from} to {to}'.",
+    "2. Create app/Services/AuditLogger.php: static or injectable helper with log(string $action, ?Model $subject, array $meta, ?User $actor) that creates an AuditLog record with actor_id, action, subject_type (get_class), subject_id, meta_json (sanitized — no secrets), ip_address from request(), created_at now().",
+    "3. Create app/Services/TrackingNumberService.php: generate(int $year): string. Inside DB::transaction(): upsert number_sequences row for scope='tracking'+year (INSERT on first use at last_value=1, else UPDATE last_value = last_value + 1), read the new value, format as sprintf('%s-%d-%06d', config('permit.tracking_prefix'), $year, $seq). Return formatted string. The calling code (ApplicationWorkflowService::submit) wraps this in a bounded retry loop (up to 5 attempts catching unique-constraint QueryException).",
+    "4. Create app/Services/PermitNumberService.php: same pattern as TrackingNumberService with scope='permit' and config('permit.permit_prefix').",
+    "5. Create app/Services/ApplicationWorkflowService.php: owns the status machine. TRANSITIONS constant maps from->to pairs exactly per design. transition(Application $app, string $to, ?User $actor, ?string $note): validates pair, updates $app->status, sets timestamps (submitted_at on SUBMITTED, reviewed_at on BPLO actions), writes ApplicationStatusHistory and AuditLog, fires the matching domain event — all inside DB::transaction(). Throws InvalidStatusTransitionException on illegal pairs. Convenience methods: submit($app, $actor) — generates tracking number via TrackingNumberService with retry loop, transitions DRAFT->SUBMITTED or FOR_CORRECTION->SUBMITTED; beginReview($app, $actor); approveForPayment($app, $actor); returnForCorrection($app, $actor, $remark) — creates ApplicationRemark type CORRECTION; reject($app, $actor, $remark) — creates ApplicationRemark type REJECTION; markPaymentPending($app, $actor); markPaymentVerified($app, $actor); releasePermit($app, $actor) — calls PermitService::release().",
+    "6. Create app/Support/FeeBreakdown.php: simple DTO / array-like class with 'lines' (array of ['code','name','amount']) and 'total' (decimal sum).",
+    "7. Create app/Services/FeeComputationService.php: computeFor(Application $app): FeeBreakdown. Reads active fee_rates joined to active fee_types ordered by sort_order. Builds line items + summed total. Logs warning if no active rates. Returns FeeBreakdown.",
+    "8. Create app/Contracts/PaymentGateway.php: interface with initiate(Payment $p): array and verify(Payment $p, array $callback): array.",
+    "9. Create app/Contracts/SmsChannel.php: interface with send(string $to, string $message): array.",
+    "10. Create app/Services/SandboxGateway.php implements PaymentGateway: initiate() sets payment status to PROCESSING, generates SANDBOX-{uuid} reference, creates PaymentTransaction(event:initiated, gateway:sandbox), returns ['status'=>'processing','reference'=>ref]. NEVER returns PAID/success. verify() validates callback, sets payment status to PAID, verification_status to VERIFIED, payment_date+verified_at, creates PaymentTransaction(event:verified), returns ['status'=>'paid'].",
+    "11. Create app/Services/PaymentService.php: startPayment(Application $app, string $method): Payment — guards $app->status === APPROVED_FOR_PAYMENT, calls FeeComputationService for breakdown, creates Payment(PENDING) with snapshot, calls gateway->initiate(), transitions app to PAYMENT_PENDING via workflow service. verify(Payment $payment, array $callback, ?User $actor): void — calls gateway->verify(), on success transitions app to PAYMENT_VERIFIED, fires PaymentConfirmed. On failure sets FAILED, transitions app back to APPROVED_FOR_PAYMENT. Resolve gateway from container keyed on config('permit.payment.mode').",
+    "12. Create app/Services/PermitService.php: release(Application $app, ?User $actor): Permit — guards $app->status === PAYMENT_VERIFIED, generates permit_number via PermitNumberService (with retry), generates 64-char verification_token (Str::random(64), check unique), snapshots business fields, sets issued_at=today, valid_until=issued_at+config('permit.valid_months') months, renders+stores PDF, creates Permit record, transitions app to PERMIT_RELEASED. renderPdf(Permit $permit): string — renders Blade view permits.pdf with dompdf, stores on local disk at permits/{permit_id}.pdf, returns path. qrDataUri(string $url): string — generates SVG via QrCode::format('svg')->size(200)->generate($url), returns 'data:image/svg+xml;base64,'.base64_encode($svg). regenerate(Permit $permit, ?User $actor): Permit — issues fresh token + re-renders PDF, audits, does not change permit_number.",
+    "13. Create app/Services/LogSmsChannel.php implements SmsChannel: send() writes to Laravel Log::info() with to+message, returns ['status'=>'logged'].",
+    "14. Create app/Services/NotificationService.php: notify(User $user, string $type, string $title, string $body, ?Application $application): void — creates Notification record (channel in_app). If user has contact_number and config('permit.sms.driver') !== null, resolves SmsChannel from container and sends, recording sms_status.",
+    "15. Create domain events in app/Events/: ApplicationSubmitted, ApplicationUnderReview, ApplicationReturnedForCorrection, ApplicationApprovedForPayment, PaymentConfirmed, PermitReleased, ApplicationRejected. Each carries the Application + optional User actor.",
+    "16. Create app/Listeners/SendStatusNotification.php: handles all 7 events. Maps event class to notification type/title/body templates. Calls NotificationService::notify() for the applicant. Does NOT implement ShouldQueue — synchronous.",
+    "17. Register service bindings in app/Providers/AppServiceProvider.php: bind PaymentGateway => SandboxGateway (when config permit.payment.mode is sandbox), bind SmsChannel => LogSmsChannel (when config permit.sms.driver is log). Register event-listener mappings if not using auto-discovery.",
+    "18. Create app/Policies/ApplicationPolicy.php: view/update/submit — applicant may act only on own application in editable status (DRAFT, FOR_CORRECTION). review — BPLO/admin only. Registered via auto-discovery.",
+    "19. Create app/Policies/PaymentPolicy.php: pay — own application in APPROVED_FOR_PAYMENT status. view — own or BPLO/admin.",
+    "20. Create app/Policies/PermitPolicy.php: download — owning applicant or BPLO/admin. No update/edit ability exists for anyone.",
+    "21. Create auth controllers in app/Http/Controllers/Auth/: RegisterController (GET show form, POST store — force role=applicant, validate via RegisterRequest, create user, login, redirect to /dashboard). LoginController (GET show form, POST authenticate with throttle, validate via LoginRequest, check is_active, Auth::attempt, redirect by role. POST destroy logout). PasswordResetController (GET/POST forgot-password, GET/POST reset-password using built-in password broker).",
+    "22. Create Form Requests in app/Http/Requests/Auth/: RegisterRequest (name required string max:255, email required email unique:users, password required confirmed min:8 with mixed case + number). LoginRequest (email required, password required)."
+  ],
+  "acceptance_criteria": [
+    "php artisan migrate:fresh --seed succeeds with all services resolvable from the container",
+    "TrackingNumberService::generate(2025) returns 'BANSUD-2025-000001' format",
+    "PermitNumberService::generate(2025) returns 'BP-2025-000001' format",
+    "ApplicationWorkflowService rejects illegal transitions by throwing InvalidStatusTransitionException",
+    "SandboxGateway::initiate() never returns PAID status",
+    "PermitService::release() throws when application is not PAYMENT_VERIFIED",
+    "LogSmsChannel writes to the Laravel log and returns 'logged'",
+    "Auth register forces role=applicant regardless of input",
+    "ApplicationPolicy denies non-owners and wrong-status access",
+    "All events/listeners are registered — php artisan event:list shows them"
+  ],
+  "verification": [
+    "php artisan config:clear",
+    "php artisan migrate:fresh --seed",
+    "php artisan event:list (shows all 7 events mapped to SendStatusNotification)",
+    "php artisan route:list (auth routes appear with no errors)",
+    "php artisan test (green)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

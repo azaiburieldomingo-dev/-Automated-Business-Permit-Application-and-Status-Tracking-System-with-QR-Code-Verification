@@ -1,0 +1,7 @@
+{
+  "task_id": "task-bansud-permit-system",
+  "task_description": "Build a complete Laravel 13 business permit system for the Municipality of Bansud, Oriental Mindoro with three roles (applicant/BPLO/admin), 8-stage status workflow, sandbox payment with verification, QR-coded PDF permits, and full test coverage — all from the existing fresh skeleton.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}
