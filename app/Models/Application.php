@@ -10,13 +10,21 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Application extends Model
 {
     public const STATUS_DRAFT = 'DRAFT';
+
     public const STATUS_SUBMITTED = 'SUBMITTED';
+
     public const STATUS_UNDER_REVIEW = 'UNDER_REVIEW';
+
     public const STATUS_FOR_CORRECTION = 'FOR_CORRECTION';
+
     public const STATUS_APPROVED_FOR_PAYMENT = 'APPROVED_FOR_PAYMENT';
+
     public const STATUS_PAYMENT_PENDING = 'PAYMENT_PENDING';
+
     public const STATUS_PAYMENT_VERIFIED = 'PAYMENT_VERIFIED';
+
     public const STATUS_PERMIT_RELEASED = 'PERMIT_RELEASED';
+
     public const STATUS_REJECTED = 'REJECTED';
 
     protected $fillable = [

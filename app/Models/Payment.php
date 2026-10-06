@@ -9,12 +9,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Payment extends Model
 {
     public const STATUS_PENDING = 'PENDING';
+
     public const STATUS_PROCESSING = 'PROCESSING';
+
     public const STATUS_PAID = 'PAID';
+
     public const STATUS_FAILED = 'FAILED';
+
     public const STATUS_CANCELLED = 'CANCELLED';
 
     public const VERIFY_UNVERIFIED = 'UNVERIFIED';
+
     public const VERIFY_VERIFIED = 'VERIFIED';
 
     protected $fillable = [

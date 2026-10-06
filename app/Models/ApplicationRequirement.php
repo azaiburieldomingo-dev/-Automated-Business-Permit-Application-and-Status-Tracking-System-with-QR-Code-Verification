@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ApplicationRequirement extends Model
 {
     public const CHECK_COMPLETE = 'COMPLETE';
+
     public const CHECK_MISSING = 'MISSING';
+
     public const CHECK_FOR_CORRECTION = 'FOR_CORRECTION';
 
     protected $fillable = [

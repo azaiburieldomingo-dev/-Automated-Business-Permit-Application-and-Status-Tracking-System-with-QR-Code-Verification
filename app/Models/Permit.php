@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Permit extends Model
 {
     public const STATUS_ACTIVE = 'ACTIVE';
+
     public const STATUS_REVOKED = 'REVOKED';
 
     protected $fillable = [
