@@ -1,13 +1,45 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\FeeRateController;
+use App\Http\Controllers\Admin\FeeTypeController;
+use App\Http\Controllers\Admin\RequirementTypeController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Applicant\ApplicationController as ApplicantApplicationController;
+use App\Http\Controllers\Applicant\DashboardController as ApplicantDashboardController;
+use App\Http\Controllers\Applicant\PaymentController as ApplicantPaymentController;
+use App\Http\Controllers\Applicant\PermitController as ApplicantPermitController;
+use App\Http\Controllers\Applicant\RequirementController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Bplo\ApplicationController as BploApplicationController;
+use App\Http\Controllers\Bplo\DashboardController as BploDashboardController;
+use App\Http\Controllers\Bplo\PaymentController as BploPaymentController;
+use App\Http\Controllers\Bplo\PermitController as BploPermitController;
+use App\Http\Controllers\PublicPages\LandingController;
+use App\Http\Controllers\PublicPages\SandboxWebhookController;
+use App\Http\Controllers\PublicPages\TrackingController;
+use App\Http\Controllers\PublicPages\VerificationController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+/*
+|--------------------------------------------------------------------------
+| Public (guest-accessible, rate-limited)
+|--------------------------------------------------------------------------
+*/
+Route::get('/', [LandingController::class, 'index'])->name('landing');
+
+Route::get('/track', [TrackingController::class, 'show'])->name('track.show');
+Route::post('/track', [TrackingController::class, 'lookup'])
+    ->middleware('throttle:6,1')
+    ->name('track.lookup');
+
+Route::get('/verify/{token}', [VerificationController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->name('verify.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -30,3 +62,87 @@ Route::middleware('guest')->group(function (): void {
 Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Applicant (auth + role:applicant)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:applicant'])->group(function (): void {
+    Route::get('/dashboard', [ApplicantDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/applications/create', [ApplicantApplicationController::class, 'create'])->name('applications.create');
+    Route::post('/applications', [ApplicantApplicationController::class, 'store'])->name('applications.store');
+    Route::get('/applications/{application}/edit', [ApplicantApplicationController::class, 'edit'])->name('applications.edit');
+    Route::put('/applications/{application}', [ApplicantApplicationController::class, 'update'])->name('applications.update');
+    Route::get('/applications/{application}/summary', [ApplicantApplicationController::class, 'summary'])->name('applications.summary');
+    Route::post('/applications/{application}/submit', [ApplicantApplicationController::class, 'submit'])->name('applications.submit');
+
+    Route::post('/applications/{application}/requirements/{type}', [RequirementController::class, 'upload'])->name('applications.requirements.upload');
+    Route::delete('/applications/{application}/requirements/{type}', [RequirementController::class, 'remove'])->name('applications.requirements.remove');
+    Route::get('/requirements/{applicationRequirement}/file', [RequirementController::class, 'file'])->name('requirements.file');
+
+    Route::get('/applications/{application}/pay', [ApplicantPaymentController::class, 'show'])->name('applications.pay');
+    Route::post('/applications/{application}/pay', [ApplicantPaymentController::class, 'start'])->name('applications.pay.start');
+    Route::get('/applications/{application}/payments', [ApplicantPaymentController::class, 'history'])->name('applications.payments');
+
+    Route::get('/applications/{application}/permit', [ApplicantPermitController::class, 'show'])->name('applications.permit');
+    Route::get('/applications/{application}/permit/download', [ApplicantPermitController::class, 'download'])->name('applications.permit.download');
+
+    Route::get('/applications/{application}', [ApplicantApplicationController::class, 'show'])->name('applications.show');
+});
+
+/*
+|--------------------------------------------------------------------------
+| BPLO (auth + role:bplo,admin)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:bplo,admin'])->prefix('bplo')->name('bplo.')->group(function (): void {
+    Route::get('/dashboard', [BploDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/applications', [BploApplicationController::class, 'index'])->name('applications.index');
+    Route::get('/applications/{application}', [BploApplicationController::class, 'show'])->name('applications.show');
+    Route::post('/applications/{application}/review', [BploApplicationController::class, 'beginReview'])->name('applications.review');
+    Route::post('/applications/{application}/approve', [BploApplicationController::class, 'approve'])->name('applications.approve');
+    Route::post('/applications/{application}/return', [BploApplicationController::class, 'returnForCorrection'])->name('applications.return');
+    Route::post('/applications/{application}/reject', [BploApplicationController::class, 'reject'])->name('applications.reject');
+    Route::post('/applications/{application}/requirements/{req}/flag', [BploApplicationController::class, 'flagRequirement'])->name('applications.requirements.flag');
+    Route::get('/requirements/{applicationRequirement}/file', [BploApplicationController::class, 'file'])->name('requirements.file');
+
+    Route::post('/payments/{payment}/confirm', [BploPaymentController::class, 'confirm'])->name('payments.confirm');
+    Route::post('/applications/{application}/release', [BploPermitController::class, 'release'])->name('applications.release');
+    Route::post('/permits/{permit}/regenerate', [BploPermitController::class, 'regenerate'])->name('permits.regenerate');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin (auth + role:admin)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    Route::resource('users', UserController::class)->except(['show', 'destroy']);
+    Route::resource('requirement-types', RequirementTypeController::class)
+        ->parameters(['requirement-types' => 'requirementType'])
+        ->except(['show', 'destroy']);
+    Route::resource('fee-types', FeeTypeController::class)
+        ->parameters(['fee-types' => 'feeType'])
+        ->except(['show', 'destroy']);
+    Route::resource('fee-rates', FeeRateController::class)
+        ->parameters(['fee-rates' => 'feeRate'])
+        ->except(['show', 'destroy']);
+
+    Route::get('/settings', [SettingController::class, 'show'])->name('settings');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Sandbox payment webhook (simulated gateway callback)
+| CSRF is excluded for this route in bootstrap/app.php.
+|--------------------------------------------------------------------------
+*/
+Route::post('/sandbox/payments/{payment}/webhook', [SandboxWebhookController::class, 'handle'])
+    ->middleware('throttle:30,1')
+    ->name('sandbox.webhook');

@@ -1,34 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Forgot Password</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-</head>
-<body>
-    <main>
-        <h1>Forgot Password</h1>
+@extends('layouts.guest')
 
-        @if (session('status'))
-            <p class="status">{{ session('status') }}</p>
-        @endif
+@section('title', 'Forgot Password — '.config('permit.municipality'))
 
-        @if ($errors->any())
-            <ul class="errors">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        @endif
+@section('content')
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <h1>Forgot Password</h1>
+            <p class="muted text-center">Enter your email and we'll send a reset link.</p>
 
-        <form method="POST" action="{{ url('/forgot-password') }}">
-            @csrf
-            <label>Email <input type="email" name="email" value="{{ old('email') }}" required></label>
-            <button type="submit">Send Reset Link</button>
-        </form>
+            @if (session('status'))
+                <div class="alert alert-info">{{ session('status') }}</div>
+            @endif
 
-        <p><a href="{{ url('/login') }}">Back to login</a></p>
-    </main>
-</body>
-</html>
+            <form method="POST" action="{{ url('/forgot-password') }}">
+                @csrf
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus>
+                    @error('email') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
+                <button type="submit" class="btn btn-block">Send Reset Link</button>
+            </form>
+
+            <p class="text-center" style="margin-top:16px">
+                <a href="{{ url('/login') }}">Back to login</a>
+            </p>
+        </div>
+    </div>
+@endsection

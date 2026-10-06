@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'role' => EnsureUserHasRole::class,
+        ]);
+
+        // The simulated gateway webhook authenticates via HMAC signature, not a
+        // session CSRF token, so it is excluded from CSRF verification.
+        $middleware->validateCsrfTokens(except: [
+            'sandbox/payments/*/webhook',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

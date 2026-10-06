@@ -1,31 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reset Password</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-</head>
-<body>
-    <main>
-        <h1>Reset Password</h1>
+@extends('layouts.guest')
 
-        @if ($errors->any())
-            <ul class="errors">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        @endif
+@section('title', 'Reset Password — '.config('permit.municipality'))
 
-        <form method="POST" action="{{ url('/reset-password') }}">
-            @csrf
-            <input type="hidden" name="token" value="{{ $token }}">
-            <label>Email <input type="email" name="email" value="{{ $email ?? old('email') }}" required></label>
-            <label>Password <input type="password" name="password" required></label>
-            <label>Confirm Password <input type="password" name="password_confirmation" required></label>
-            <button type="submit">Reset Password</button>
-        </form>
-    </main>
-</body>
-</html>
+@section('content')
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <h1>Reset Password</h1>
+
+            <form method="POST" action="{{ url('/reset-password') }}">
+                @csrf
+                <input type="hidden" name="token" value="{{ $token }}">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ old('email', $email) }}" required autofocus>
+                    @error('email') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label for="password">New Password</label>
+                    <input type="password" id="password" name="password" required>
+                    @error('password') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label for="password_confirmation">Confirm New Password</label>
+                    <input type="password" id="password_confirmation" name="password_confirmation" required>
+                </div>
+                <button type="submit" class="btn btn-block">Reset Password</button>
+            </form>
+        </div>
+    </div>
+@endsection

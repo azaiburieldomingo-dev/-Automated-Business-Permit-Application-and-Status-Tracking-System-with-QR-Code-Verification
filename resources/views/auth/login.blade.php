@@ -1,33 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-</head>
-<body>
-    <main>
-        <h1>Login</h1>
+@extends('layouts.guest')
 
-        @if ($errors->any())
-            <ul class="errors">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        @endif
+@section('title', 'Login — '.config('permit.municipality'))
 
-        <form method="POST" action="{{ url('/login') }}">
-            @csrf
-            <label>Email <input type="email" name="email" value="{{ old('email') }}" required></label>
-            <label>Password <input type="password" name="password" required></label>
-            <label><input type="checkbox" name="remember" value="1"> Remember me</label>
-            <button type="submit">Login</button>
-        </form>
+@section('content')
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <h1>Login</h1>
 
-        <p><a href="{{ url('/forgot-password') }}">Forgot your password?</a></p>
-        <p><a href="{{ url('/register') }}">Create an account</a></p>
-    </main>
-</body>
-</html>
+            <form method="POST" action="{{ url('/login') }}">
+                @csrf
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus>
+                    @error('email') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                    @error('password') <div class="field-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" name="remember" value="1"> Remember me</label>
+                </div>
+                <button type="submit" class="btn btn-block">Login</button>
+            </form>
+
+            <p class="text-center" style="margin-top:16px">
+                <a href="{{ url('/forgot-password') }}">Forgot your password?</a>
+            </p>
+            <p class="text-center">
+                No account? <a href="{{ url('/register') }}">Register as an applicant</a>
+            </p>
+        </div>
+    </div>
+@endsection
