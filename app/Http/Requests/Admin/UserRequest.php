@@ -29,7 +29,7 @@ class UserRequest extends FormRequest
                 'required', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($user?->getKey()),
             ],
-            'role' => ['required', Rule::in([User::ROLE_APPLICANT, User::ROLE_BPLO, User::ROLE_ADMIN])],
+            'role' => ['required', Rule::in([User::ROLE_APPLICANT, User::ROLE_BPLO, User::ROLE_TREASURER, User::ROLE_INSPECTOR, User::ROLE_ADMIN])],
             'contact_number' => ['nullable', 'string', 'max:32'],
             'address' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],

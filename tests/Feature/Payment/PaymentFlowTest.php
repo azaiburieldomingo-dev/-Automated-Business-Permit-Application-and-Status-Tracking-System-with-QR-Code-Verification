@@ -50,17 +50,17 @@ class PaymentFlowTest extends TestCase
         $this->assertSame(Payment::VERIFY_UNVERIFIED, $payment->verification_status);
     }
 
-    public function test_bplo_confirm_payment_marks_payment_verified(): void
+    public function test_treasurer_confirm_payment_marks_payment_verified(): void
     {
         $applicant = $this->makeApplicant();
-        $bplo = $this->makeBplo();
+        $treasurer = $this->makeTreasurer();
         $application = $this->makeApplication($applicant, Application::STATUS_APPROVED_FOR_PAYMENT);
 
         $this->actingAs($applicant)->post("/applications/{$application->getKey()}/pay", ['method' => 'gcash']);
         $payment = Payment::where('application_id', $application->getKey())->firstOrFail();
 
-        $this->actingAs($bplo)
-            ->post("/bplo/payments/{$payment->getKey()}/confirm")
+        $this->actingAs($treasurer)
+            ->post("/treasurer/payments/{$payment->getKey()}/confirm")
             ->assertRedirect();
 
         $this->assertSame(Application::STATUS_PAYMENT_VERIFIED, $application->fresh()->status);
@@ -68,7 +68,7 @@ class PaymentFlowTest extends TestCase
         $payment->refresh();
         $this->assertSame(Payment::STATUS_PAID, $payment->status);
         $this->assertSame(Payment::VERIFY_VERIFIED, $payment->verification_status);
-        $this->assertSame($bplo->getKey(), $payment->verified_by);
+        $this->assertSame($treasurer->getKey(), $payment->verified_by);
     }
 
     public function test_payment_history_shows_attempts(): void

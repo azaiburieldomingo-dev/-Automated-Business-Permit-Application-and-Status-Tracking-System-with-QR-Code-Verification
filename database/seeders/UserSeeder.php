@@ -30,6 +30,24 @@ class UserSeeder extends Seeder
         $bplo->is_active = true;
         $bplo->save();
 
+        $treasurer = User::create([
+            'name' => 'Treasurer Staff',
+            'email' => 'treasurer@bansud.gov.ph',
+            'password' => 'Password123!',
+        ]);
+        $treasurer->role = User::ROLE_TREASURER;
+        $treasurer->is_active = true;
+        $treasurer->save();
+
+        $inspector = User::create([
+            'name' => 'Inspector Staff',
+            'email' => 'inspector@bansud.gov.ph',
+            'password' => 'Password123!',
+        ]);
+        $inspector->role = User::ROLE_INSPECTOR;
+        $inspector->is_active = true;
+        $inspector->save();
+
         $applicant = User::create([
             'name' => 'Sample Applicant',
             'email' => 'applicant@example.com',

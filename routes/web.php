@@ -19,10 +19,14 @@ use App\Http\Controllers\Bplo\ApplicationController as BploApplicationController
 use App\Http\Controllers\Bplo\DashboardController as BploDashboardController;
 use App\Http\Controllers\Bplo\PaymentController as BploPaymentController;
 use App\Http\Controllers\Bplo\PermitController as BploPermitController;
+use App\Http\Controllers\Inspector\DashboardController as InspectorDashboardController;
+use App\Http\Controllers\Inspector\PermitController as InspectorPermitController;
 use App\Http\Controllers\PublicPages\LandingController;
 use App\Http\Controllers\PublicPages\SandboxWebhookController;
 use App\Http\Controllers\PublicPages\TrackingController;
 use App\Http\Controllers\PublicPages\VerificationController;
+use App\Http\Controllers\Treasurer\DashboardController as TreasurerDashboardController;
+use App\Http\Controllers\Treasurer\PaymentController as TreasurerPaymentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,11 +38,16 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 Route::get('/track', [TrackingController::class, 'show'])->name('track.show');
 Route::post('/track', [TrackingController::class, 'lookup'])
-    ->middleware('throttle:6,1')
+    ->middleware('throttle:track')
     ->name('track.lookup');
 
+// Manual entry form (no rate limit needed: it only redirects to verify.show,
+// which is the throttled, logged lookup).
+Route::get('/verify', [VerificationController::class, 'lookup'])
+    ->name('verify.lookup');
+
 Route::get('/verify/{token}', [VerificationController::class, 'show'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:verify')
     ->name('verify.show');
 
 /*
@@ -51,7 +60,7 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/register', [RegisterController::class, 'store']);
 
     Route::get('/login', [LoginController::class, 'show'])->name('login');
-    Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:5,1');
+    Route::post('/login', [LoginController::class, 'authenticate'])->middleware('throttle:login');
 
     Route::get('/forgot-password', [PasswordResetController::class, 'showForgot'])->name('password.request');
     Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
@@ -68,8 +77,12 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 | Applicant (auth + role:applicant)
 |--------------------------------------------------------------------------
 */
+// Shared entry point: applicants see their dashboard; BPLO/admin are sent to theirs.
+Route::get('/dashboard', [ApplicantDashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
+
 Route::middleware(['auth', 'role:applicant'])->group(function (): void {
-    Route::get('/dashboard', [ApplicantDashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/applications/create', [ApplicantApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications', [ApplicantApplicationController::class, 'store'])->name('applications.store');
@@ -78,6 +91,7 @@ Route::middleware(['auth', 'role:applicant'])->group(function (): void {
     Route::get('/applications/{application}/summary', [ApplicantApplicationController::class, 'summary'])->name('applications.summary');
     Route::post('/applications/{application}/submit', [ApplicantApplicationController::class, 'submit'])->name('applications.submit');
 
+    Route::post('/applications/{application}/requirements', [RequirementController::class, 'uploadMany'])->name('applications.requirements.uploadMany');
     Route::post('/applications/{application}/requirements/{type}', [RequirementController::class, 'upload'])->name('applications.requirements.upload');
     Route::delete('/applications/{application}/requirements/{type}', [RequirementController::class, 'remove'])->name('applications.requirements.remove');
     Route::get('/requirements/{applicationRequirement}/file', [RequirementController::class, 'file'])->name('requirements.file');
@@ -85,6 +99,7 @@ Route::middleware(['auth', 'role:applicant'])->group(function (): void {
     Route::get('/applications/{application}/pay', [ApplicantPaymentController::class, 'show'])->name('applications.pay');
     Route::post('/applications/{application}/pay', [ApplicantPaymentController::class, 'start'])->name('applications.pay.start');
     Route::get('/applications/{application}/payments', [ApplicantPaymentController::class, 'history'])->name('applications.payments');
+    Route::get('/payments/{payment}/receipt', [ApplicantPaymentController::class, 'proof'])->name('payments.proof');
 
     Route::get('/applications/{application}/permit', [ApplicantPermitController::class, 'show'])->name('applications.permit');
     Route::get('/applications/{application}/permit/download', [ApplicantPermitController::class, 'download'])->name('applications.permit.download');
@@ -109,9 +124,36 @@ Route::middleware(['auth', 'role:bplo,admin'])->prefix('bplo')->name('bplo.')->g
     Route::post('/applications/{application}/requirements/{req}/flag', [BploApplicationController::class, 'flagRequirement'])->name('applications.requirements.flag');
     Route::get('/requirements/{applicationRequirement}/file', [BploApplicationController::class, 'file'])->name('requirements.file');
 
-    Route::post('/payments/{payment}/confirm', [BploPaymentController::class, 'confirm'])->name('payments.confirm');
+    Route::get('/payments/{payment}/receipt', [BploPaymentController::class, 'proof'])->name('payments.proof');
     Route::post('/applications/{application}/release', [BploPermitController::class, 'release'])->name('applications.release');
     Route::post('/permits/{permit}/regenerate', [BploPermitController::class, 'regenerate'])->name('permits.regenerate');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Treasurer (auth + role:treasurer,admin) — verifies GCash payments
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:treasurer,admin'])->prefix('treasurer')->name('treasurer.')->group(function (): void {
+    Route::get('/dashboard', [TreasurerDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/payments', [TreasurerPaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/{payment}', [TreasurerPaymentController::class, 'show'])->name('payments.show');
+    Route::post('/payments/{payment}/confirm', [TreasurerPaymentController::class, 'confirm'])->name('payments.confirm');
+    Route::post('/payments/{payment}/reject', [TreasurerPaymentController::class, 'reject'])->name('payments.reject');
+    Route::get('/payments/{payment}/receipt', [TreasurerPaymentController::class, 'proof'])->name('payments.proof');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Inspector (auth + role:inspector,admin) — QR scan + read-only compliance
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:inspector,admin'])->prefix('inspector')->name('inspector.')->group(function (): void {
+    Route::get('/dashboard', [InspectorDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/permits', [InspectorPermitController::class, 'index'])->name('permits.index');
+    Route::get('/permits/{permit}', [InspectorPermitController::class, 'show'])->name('permits.show');
 });
 
 /*
@@ -144,5 +186,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 |--------------------------------------------------------------------------
 */
 Route::post('/sandbox/payments/{payment}/webhook', [SandboxWebhookController::class, 'handle'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:webhook')
     ->name('sandbox.webhook');

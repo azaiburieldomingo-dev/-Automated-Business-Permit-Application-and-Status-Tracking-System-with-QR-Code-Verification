@@ -35,6 +35,35 @@ class ReviewFlowTest extends TestCase
         $this->assertSame(Application::STATUS_APPROVED_FOR_PAYMENT, $application->fresh()->status);
     }
 
+    public function test_approved_application_tells_bplo_the_applicant_pays_next(): void
+    {
+        $bplo = $this->makeBplo();
+        $application = $this->makeApplication($this->makeApplicant(), Application::STATUS_APPROVED_FOR_PAYMENT);
+
+        $this->actingAs($bplo)
+            ->get("/bplo/applications/{$application->getKey()}")
+            ->assertOk()
+            ->assertSee('Next step: the applicant pays.')
+            ->assertSee('Fees to be Paid')
+            ->assertSee('Waiting for the applicant to pay online.')
+            ->assertDontSee('Confirm Payment</button>', false);
+    }
+
+    public function test_pending_payment_shows_reference_but_no_confirm_button_for_bplo(): void
+    {
+        $bplo = $this->makeBplo();
+        $application = $this->makeApplication($this->makeApplicant(), Application::STATUS_PAYMENT_PENDING);
+        $payment = $this->makePendingPayment($application);
+
+        $this->actingAs($bplo)
+            ->get("/bplo/applications/{$application->getKey()}")
+            ->assertOk()
+            ->assertSee('The Treasurer is verifying this payment.')
+            ->assertSee($payment->reference_number)
+            ->assertDontSee('Confirm Payment</button>', false)
+            ->assertDontSee('Reject Payment</button>', false);
+    }
+
     public function test_return_for_correction_requires_a_remark(): void
     {
         $bplo = $this->makeBplo();

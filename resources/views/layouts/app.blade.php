@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('permit.municipality').' — Business Permit System')</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="theme-color" content="#36454F">
+    <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 </head>
 <body>
     @php
@@ -25,6 +25,13 @@
                     @elseif ($user->isBplo())
                         <a href="{{ url('/bplo/dashboard') }}">Dashboard</a>
                         <a href="{{ url('/bplo/applications') }}">Applications</a>
+                    @elseif ($user->isTreasurer())
+                        <a href="{{ url('/treasurer/dashboard') }}">Dashboard</a>
+                        <a href="{{ url('/treasurer/payments') }}">Payments</a>
+                    @elseif ($user->isInspector())
+                        <a href="{{ url('/inspector/dashboard') }}">Dashboard</a>
+                        <a href="{{ url('/inspector/permits') }}">Permits</a>
+                        <a href="{{ url('/verify') }}">Verify</a>
                     @elseif ($user->isAdmin())
                         <a href="{{ url('/admin/dashboard') }}">Dashboard</a>
                         <a href="{{ url('/admin/users') }}">Users</a>
@@ -37,7 +44,7 @@
 
                     <x-notification-bell :count="$unread" />
 
-                    <span class="muted" style="color:#dbeafe">{{ $user->name }}</span>
+                    <span class="user-name">{{ $user->name }}</span>
                     <form method="POST" action="{{ url('/logout') }}" class="inline-form">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-secondary">Logout</button>

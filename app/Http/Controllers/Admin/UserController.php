@@ -93,6 +93,8 @@ class UserController extends Controller
         return [
             User::ROLE_APPLICANT => 'Applicant',
             User::ROLE_BPLO => 'BPLO',
+            User::ROLE_TREASURER => 'Treasurer',
+            User::ROLE_INSPECTOR => 'Inspector',
             User::ROLE_ADMIN => 'Admin',
         ];
     }

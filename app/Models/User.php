@@ -24,6 +24,10 @@ class User extends Authenticatable
 
     public const ROLE_ADMIN = 'admin';
 
+    public const ROLE_TREASURER = 'treasurer';
+
+    public const ROLE_INSPECTOR = 'inspector';
+
     /**
      * Get the attributes that should be cast.
      *
@@ -36,6 +40,20 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The dashboard each role lands on after login or when visiting /dashboard.
+     */
+    public function homePath(): string
+    {
+        return match ($this->role) {
+            self::ROLE_ADMIN => '/admin/dashboard',
+            self::ROLE_BPLO => '/bplo/dashboard',
+            self::ROLE_TREASURER => '/treasurer/dashboard',
+            self::ROLE_INSPECTOR => '/inspector/dashboard',
+            default => '/dashboard',
+        };
     }
 
     public function isApplicant(): bool
@@ -51,6 +69,16 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isTreasurer(): bool
+    {
+        return $this->role === self::ROLE_TREASURER;
+    }
+
+    public function isInspector(): bool
+    {
+        return $this->role === self::ROLE_INSPECTOR;
     }
 
     public function businesses(): HasMany

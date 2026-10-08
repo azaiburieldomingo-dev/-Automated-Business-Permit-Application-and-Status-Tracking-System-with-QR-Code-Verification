@@ -49,6 +49,16 @@ trait MakesDomainData
         return $this->makeUser(User::ROLE_ADMIN);
     }
 
+    protected function makeTreasurer(): User
+    {
+        return $this->makeUser(User::ROLE_TREASURER);
+    }
+
+    protected function makeInspector(): User
+    {
+        return $this->makeUser(User::ROLE_INSPECTOR);
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */

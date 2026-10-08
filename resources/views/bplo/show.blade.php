@@ -78,7 +78,42 @@
 
     <div class="card">
         <h2>Actions</h2>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
+
+        @switch($application->status)
+            @case(Application::STATUS_SUBMITTED)
+                <p class="muted">New application. Click <strong>Begin Review</strong> to start checking the requirements.</p>
+                @break
+            @case(Application::STATUS_UNDER_REVIEW)
+                <p class="muted">Check each requirement above. Then approve it for payment, return it for correction, or reject it.</p>
+                @break
+            @case(Application::STATUS_FOR_CORRECTION)
+                <div class="alert alert-warning mb-0">Waiting for the applicant to upload the corrected requirements and resubmit. No action needed until then.</div>
+                @break
+            @case(Application::STATUS_APPROVED_FOR_PAYMENT)
+                <div class="alert alert-info mb-0">
+                    <strong>Next step: the applicant pays.</strong> The applicant sees a <strong>Pay Now</strong> button on their
+                    application page and pays the fees below through GCash, Maya, or QR Ph. Once they pay, the payment appears
+                    in the <strong>Payments</strong> section, where you can confirm it.
+                </div>
+                @break
+            @case(Application::STATUS_PAYMENT_PENDING)
+                <div class="alert alert-info mb-0">
+                    <strong>The Treasurer is verifying this payment.</strong> No action is needed from BPLO. Once the Treasurer
+                    confirms the GCash payment, this application becomes payment-verified and you can release the permit.
+                </div>
+                @break
+            @case(Application::STATUS_PAYMENT_VERIFIED)
+                <p class="muted">Payment verified. Click <strong>Release Permit</strong> to issue the Mayor's Permit and its QR code.</p>
+                @break
+            @case(Application::STATUS_PERMIT_RELEASED)
+                <div class="alert alert-success mb-0">Permit released. The applicant can now view, download, and print it.</div>
+                @break
+            @case(Application::STATUS_REJECTED)
+                <div class="alert alert-error mb-0">This application was rejected. See the remarks below.</div>
+                @break
+        @endswitch
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
             @if ($application->status === Application::STATUS_SUBMITTED)
                 <form method="POST" action="{{ route('bplo.applications.review', $application) }}" class="inline-form">
                     @csrf <button type="submit" class="btn">Begin Review</button>
@@ -115,34 +150,79 @@
         </div>
     </div>
 
-    <div class="card">
-        <h2>Payments</h2>
-        @if ($application->payments->isEmpty())
-            <p class="muted">No payments.</p>
-        @else
+    @if ($breakdown)
+        <div class="card">
+            <h2>Fees to be Paid</h2>
             <div class="table-wrap">
                 <table class="data">
-                    <thead><tr><th>Date</th><th>Method</th><th>Amount</th><th>Status</th><th>Verification</th><th></th></tr></thead>
+                    <thead><tr><th>Fee</th><th class="text-right">Amount</th></tr></thead>
                     <tbody>
-                        @foreach ($application->payments->sortByDesc('created_at') as $payment)
+                        @foreach ($breakdown->lines as $line)
                             <tr>
-                                <td>{{ $payment->created_at?->format('M d, Y H:i') }}</td>
-                                <td>{{ strtoupper($payment->method) }}</td>
-                                <td>&#8369;{{ number_format((float) $payment->amount, 2) }}</td>
-                                <td>{{ $payment->status }}</td>
-                                <td>{{ $payment->verification_status }}</td>
-                                <td>
-                                    @if ($payment->verification_status !== 'VERIFIED' && $payment->status !== 'PAID')
-                                        <form method="POST" action="{{ route('bplo.payments.confirm', $payment) }}" class="inline-form">
-                                            @csrf <button type="submit" class="btn btn-sm btn-success">Confirm Payment</button>
-                                        </form>
-                                    @endif
-                                </td>
+                                <td>{{ $line['name'] }}</td>
+                                <td class="text-right">&#8369;{{ number_format($line['amount'], 2) }}</td>
                             </tr>
                         @endforeach
+                        <tr>
+                            <th>TOTAL</th>
+                            <th class="text-right">&#8369;{{ number_format($breakdown->total, 2) }}</th>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+        </div>
+    @endif
+
+    <div class="card">
+        <h2>Payments</h2>
+        @if ($application->payments->isEmpty())
+            <p class="muted">
+                No payments yet.
+                @if ($application->status === Application::STATUS_APPROVED_FOR_PAYMENT)
+                    Waiting for the applicant to pay online.
+                @endif
+            </p>
+        @else
+            @foreach ($application->payments->sortByDesc('id') as $payment)
+                @php $receiving = config('permit.payment.accounts.'.$payment->method); @endphp
+                <div class="payment-entry {{ $payment->isAwaitingVerification() ? 'is-pending' : '' }}">
+                    <div class="flex-between">
+                        <strong>{{ \App\Support\PaymentMethods::label($payment->method) }} · &#8369;{{ number_format((float) $payment->amount, 2) }}</strong>
+                        <span>
+                            <span class="badge {{ $payment->status === 'PAID' ? 'badge-green' : ($payment->status === 'FAILED' ? 'badge-red' : 'badge-yellow') }}">{{ $payment->status }}</span>
+                            <span class="badge {{ $payment->verification_status === 'VERIFIED' ? 'badge-green' : 'badge-gray' }}">{{ $payment->verification_status }}</span>
+                        </span>
+                    </div>
+
+                    <dl class="kv" style="margin-top:10px">
+                        <dt>Submitted</dt><dd>{{ $payment->created_at?->format('M d, Y g:i A') }}</dd>
+                        <dt>Reference No.</dt><dd style="font-family:monospace;font-size:1rem;font-weight:700">{{ $payment->reference_number ?? '—' }}</dd>
+                        @if ($payment->payer_name || $payment->payer_number)
+                            <dt>Sender</dt><dd>{{ $payment->payer_name ?? '—' }} @if ($payment->payer_number) · {{ $payment->payer_number }} @endif</dd>
+                        @endif
+                        @if (! empty($receiving['number']))
+                            <dt>Paid to</dt><dd>{{ $receiving['number'] }} @if (! empty($receiving['name'])) ({{ $receiving['name'] }}) @endif</dd>
+                        @endif
+                        @if ($payment->proof_path)
+                            <dt>Receipt</dt>
+                            <dd><a href="{{ route('bplo.payments.proof', $payment) }}" target="_blank" rel="noopener">View receipt ({{ $payment->proof_original_name }})</a></dd>
+                        @endif
+                        @if ($payment->verified_at)
+                            <dt>Verified</dt><dd>{{ $payment->verified_at->format('M d, Y g:i A') }}</dd>
+                        @endif
+                        @if ($payment->rejection_reason)
+                            <dt>Not accepted</dt><dd style="color:var(--red-dark)">{{ $payment->rejection_reason }}</dd>
+                        @endif
+                    </dl>
+
+                    @if ($payment->isAwaitingVerification())
+                        <div class="alert alert-info" style="margin:14px 0 10px">
+                            The Treasurer is verifying Ref No. <strong>{{ $payment->reference_number }}</strong>
+                            (&#8369;{{ number_format((float) $payment->amount, 2) }}). You can release the permit once it is confirmed.
+                        </div>
+                    @endif
+                </div>
+            @endforeach
         @endif
     </div>
 
@@ -168,7 +248,7 @@
                     <strong>{{ $history->to_status }}</strong>
                     @if ($history->from_status)<span class="muted">(from {{ $history->from_status }})</span>@endif
                     @if ($history->note)<div>{{ $history->note }}</div>@endif
-                    <div class="meta">{{ $history->created_at?->format('M d, Y H:i') }} @if($history->actor_role) · {{ ucfirst($history->actor_role) }} @endif</div>
+                    <div class="meta">{{ $history->created_at?->format('M d, Y g:i A') }} @if($history->actor_role) · {{ ucfirst($history->actor_role) }} @endif</div>
                 </li>
             @endforeach
         </ul>
@@ -182,7 +262,7 @@
                     <li>
                         <span class="badge {{ $remark->type === 'REJECTION' ? 'badge-red' : 'badge-yellow' }}">{{ $remark->type }}</span>
                         <div>{{ $remark->body }}</div>
-                        <div class="meta">{{ $remark->author?->name }} · {{ $remark->created_at?->format('M d, Y H:i') }}</div>
+                        <div class="meta">{{ $remark->author?->name }} · {{ $remark->created_at?->format('M d, Y g:i A') }}</div>
                     </li>
                 @endforeach
             </ul>
