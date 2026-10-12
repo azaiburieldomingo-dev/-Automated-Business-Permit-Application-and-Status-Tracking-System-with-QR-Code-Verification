@@ -9,19 +9,20 @@
     </div>
 
     <div class="stat-grid">
-        <div class="stat-card"><div class="value">{{ $counts['total'] }}</div><div class="label">Total</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['pending_review'] }}</div><div class="label">Pending Review</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['for_correction'] }}</div><div class="label">For Correction</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['approved'] }}</div><div class="label">Approved</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['awaiting_payment'] }}</div><div class="label">Awaiting Payment</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['paid'] }}</div><div class="label">Paid</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['released'] }}</div><div class="label">Released</div></div>
+        <x-stat-card :value="$counts['total']" label="Total" icon="📋" accent="mint" />
+        <x-stat-card :value="$counts['pending_review']" label="Pending Review" icon="🕑" accent="amber" />
+        <x-stat-card :value="$counts['for_correction']" label="For Correction" icon="✏️" accent="amber" />
+        <x-stat-card :value="$counts['approved']" label="Approved" icon="👍" accent="green" />
+        <x-stat-card :value="$counts['awaiting_payment']" label="Awaiting Payment" icon="⏳" accent="amber" />
+        <x-stat-card :value="$counts['paid']" label="Paid" icon="💰" accent="green" />
+        <x-stat-card :value="$counts['released']" label="Released" icon="✅" accent="green" />
     </div>
 
     <div class="card">
-        <h2>Recent Applications</h2>
+        <h2 class="section">Recent Applications</h2>
         @if ($recent->isEmpty())
-            <p class="muted">No submitted applications yet.</p>
+            <x-empty-state icon="📋" title="No applications yet"
+                message="Submitted applications will appear here for review." />
         @else
             <div class="table-wrap">
                 <table class="data">

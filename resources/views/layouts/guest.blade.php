@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('permit.municipality').' — Business Permit System')</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="theme-color" content="#536978">
+    <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 </head>
 <body>
     <header class="navbar">
@@ -15,7 +15,12 @@
             <nav>
                 <a href="{{ url('/') }}">Home</a>
                 <a href="{{ url('/track') }}">Track</a>
-                <a href="{{ url('/login') }}">Login</a>
+                @auth
+                    <a href="{{ url(auth()->user()->homePath()) }}">My Dashboard</a>
+                @else
+                    <a href="{{ url('/login') }}">Login</a>
+                @endauth
+                <x-theme-switcher />
             </nav>
         </div>
     </header>

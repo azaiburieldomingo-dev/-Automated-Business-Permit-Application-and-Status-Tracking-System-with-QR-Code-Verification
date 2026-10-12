@@ -4,16 +4,17 @@
 
 @php
     $map = [
-        'VALID' => ['verify-valid', 'VALID', 'This permit is valid and active.'],
-        'EXPIRED' => ['verify-expired', 'EXPIRED', 'This permit has expired.'],
-        'REVOKED' => ['verify-revoked', 'REVOKED', 'This permit has been revoked.'],
-        'NOT_FOUND' => ['verify-notfound', 'NOT FOUND', 'No permit matches this code.'],
+        'VALID' => ['verify-valid', '✓ VALID PERMIT', 'This permit record is registered in the '.config('permit.municipality').' system.'],
+        'EXPIRED' => ['verify-expired', '⚠ EXPIRED PERMIT', 'This permit record is registered but is no longer active.'],
+        'REVOKED' => ['verify-revoked', '✕ REVOKED PERMIT', 'This permit record has been revoked and is no longer valid.'],
+        'NOT_FOUND' => ['verify-notfound', '✕ INVALID / NOT FOUND', 'This QR code does not correspond to a valid registered permit record.'],
     ];
     [$class, $label, $message] = $map[$result] ?? $map['NOT_FOUND'];
 @endphp
 
 @section('content')
     <div style="max-width:560px;margin:0 auto">
+        <h1 class="text-center">PERMIT VERIFICATION</h1>
         <div class="verify-result {{ $class }}">
             <div class="status">{{ $label }}</div>
             <p class="mb-0">{{ $message }}</p>

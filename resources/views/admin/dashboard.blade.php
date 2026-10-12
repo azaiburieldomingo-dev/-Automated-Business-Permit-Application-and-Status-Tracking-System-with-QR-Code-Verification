@@ -8,18 +8,19 @@
     </div>
 
     <div class="stat-grid">
-        <div class="stat-card"><div class="value">{{ $counts['users'] }}</div><div class="label">Total Users</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['applications'] }}</div><div class="label">Total Applications</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['permits'] }}</div><div class="label">Total Permits</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['payments'] }}</div><div class="label">Total Payments</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['active_permits'] }}</div><div class="label">Active Permits</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['expired_permits'] }}</div><div class="label">Expired Permits</div></div>
+        <x-stat-card :value="$counts['users']" label="Total Users" icon="👥" accent="mint" />
+        <x-stat-card :value="$counts['applications']" label="Total Applications" icon="📋" accent="default" />
+        <x-stat-card :value="$counts['permits']" label="Total Permits" icon="📄" accent="default" />
+        <x-stat-card :value="$counts['payments']" label="Total Payments" icon="💰" accent="green" />
+        <x-stat-card :value="$counts['active_permits']" label="Active Permits" icon="✅" accent="green" />
+        <x-stat-card :value="$counts['expired_permits']" label="Expired Permits" icon="⚠️" accent="amber" />
     </div>
 
     <div class="card">
-        <h2>Recent Activities</h2>
+        <h2 class="section">Recent Activities</h2>
         @if ($recentActivities->isEmpty())
-            <p class="muted">No activity recorded.</p>
+            <x-empty-state icon="📜" title="No activity yet"
+                message="Logins, approvals, payments, and other actions will show up here." />
         @else
             <div class="table-wrap">
                 <table class="data">
@@ -29,7 +30,7 @@
                     <tbody>
                         @foreach ($recentActivities as $log)
                             <tr>
-                                <td>{{ $log->created_at?->format('M d, Y H:i') }}</td>
+                                <td>{{ $log->created_at?->format('M d, Y g:i A') }}</td>
                                 <td>{{ $log->actor?->name ?? 'System' }}</td>
                                 <td>{{ $log->action }}</td>
                                 <td>{{ class_basename($log->subject_type ?? '') }} {{ $log->subject_id }}</td>

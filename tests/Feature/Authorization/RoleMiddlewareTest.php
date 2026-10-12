@@ -49,6 +49,28 @@ class RoleMiddlewareTest extends TestCase
         $this->actingAs($admin)->get('/admin/dashboard')->assertOk();
     }
 
+    public function test_staff_visiting_dashboard_are_sent_to_their_own(): void
+    {
+        $this->actingAs($this->makeBplo())->get('/dashboard')->assertRedirect('/bplo/dashboard');
+        $this->actingAs($this->makeAdmin())->get('/dashboard')->assertRedirect('/admin/dashboard');
+        $this->actingAs($this->makeApplicant())->get('/dashboard')->assertOk();
+    }
+
+    public function test_signed_in_users_opening_login_go_to_their_own_dashboard(): void
+    {
+        $this->actingAs($this->makeBplo())->get('/login')->assertRedirect('/bplo/dashboard');
+        $this->actingAs($this->makeAdmin())->get('/register')->assertRedirect('/admin/dashboard');
+        $this->actingAs($this->makeApplicant())->get('/login')->assertRedirect('/dashboard');
+    }
+
+    public function test_forbidden_page_offers_a_way_back(): void
+    {
+        $this->actingAs($this->makeApplicant())->get('/bplo/dashboard')
+            ->assertForbidden()
+            ->assertSee('Access Not Allowed')
+            ->assertSee('Go to My Dashboard');
+    }
+
     public function test_unauthenticated_requests_redirect_to_login(): void
     {
         $this->get('/dashboard')->assertRedirect('/login');

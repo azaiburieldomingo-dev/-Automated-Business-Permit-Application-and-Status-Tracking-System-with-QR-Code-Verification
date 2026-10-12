@@ -28,6 +28,9 @@
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <!-- Deterministic payment + QR settings; manual-mode tests opt in explicitly. -->
+        <env name="PAYMENT_MODE" value="sandbox"/>
+        <env name="PERMIT_PUBLIC_URL" value="http://192.168.1.50:8000"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

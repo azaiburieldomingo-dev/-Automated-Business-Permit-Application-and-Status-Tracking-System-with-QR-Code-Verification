@@ -34,7 +34,20 @@ class Payment extends Model
         'payment_date',
         'verified_at',
         'verified_by',
+        'payer_name',
+        'payer_number',
+        'proof_path',
+        'proof_original_name',
     ];
+
+    /**
+     * Awaiting a BPLO decision (submitted, not yet confirmed or rejected).
+     */
+    public function isAwaitingVerification(): bool
+    {
+        return $this->status === self::STATUS_PROCESSING
+            && $this->verification_status !== self::VERIFY_VERIFIED;
+    }
 
     protected function casts(): array
     {

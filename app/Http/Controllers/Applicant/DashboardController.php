@@ -4,14 +4,20 @@ namespace App\Http\Controllers\Applicant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $user = $request->user();
+
+        // /dashboard is the generic "home" URL; staff belong on their own dashboard.
+        if (! $user->isApplicant()) {
+            return redirect($user->homePath());
+        }
 
         $applications = $user->applications()
             ->latest()

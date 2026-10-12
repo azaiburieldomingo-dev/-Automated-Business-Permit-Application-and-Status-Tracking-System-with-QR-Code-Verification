@@ -7,6 +7,7 @@ use App\Http\Requests\ReviewActionRequest;
 use App\Models\Application;
 use App\Models\ApplicationRequirement;
 use App\Services\ApplicationWorkflowService;
+use App\Services\FeeComputationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -47,7 +48,7 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function show(Application $application): View
+    public function show(Application $application, FeeComputationService $fees): View
     {
         $this->authorize('review', $application);
 
@@ -60,8 +61,15 @@ class ApplicationController extends Controller
             'user',
         ]);
 
+        // Show the fees the applicant is being asked to pay while payment is open.
+        $breakdown = in_array($application->status, [
+            Application::STATUS_APPROVED_FOR_PAYMENT,
+            Application::STATUS_PAYMENT_PENDING,
+        ], true) ? $fees->computeFor($application) : null;
+
         return view('bplo.show', [
             'application' => $application,
+            'breakdown' => $breakdown,
         ]);
     }
 

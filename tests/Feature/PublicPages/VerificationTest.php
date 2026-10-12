@@ -84,6 +84,38 @@ class VerificationTest extends TestCase
         ]);
     }
 
+    public function test_verify_lookup_form_renders(): void
+    {
+        $this->get('/verify')
+            ->assertOk()
+            ->assertSee('Verification Code or Link');
+    }
+
+    public function test_verify_lookup_accepts_full_link_or_bare_token(): void
+    {
+        $permit = $this->makePermit($this->releasedApplication(), Permit::STATUS_ACTIVE);
+        $expected = route('verify.show', ['token' => $permit->verification_token]);
+
+        $this->get('/verify?code='.urlencode(url('/verify/'.$permit->verification_token)))
+            ->assertRedirect($expected);
+
+        $this->get('/verify?code='.$permit->verification_token)
+            ->assertRedirect($expected);
+    }
+
+    public function test_verify_throttle_does_not_lock_out_tracking(): void
+    {
+        $permit = $this->makePermit($this->releasedApplication(), Permit::STATUS_ACTIVE);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->get('/verify/'.$permit->verification_token)->assertOk();
+        }
+
+        // Tracking has its own bucket, so prior QR scans don't block it.
+        $this->post('/track', ['tracking_number' => 'BANSUD-0000-000000', 'verifier' => 'x'])
+            ->assertStatus(200);
+    }
+
     public function test_verify_route_is_throttled(): void
     {
         $permit = $this->makePermit($this->releasedApplication(), Permit::STATUS_ACTIVE);

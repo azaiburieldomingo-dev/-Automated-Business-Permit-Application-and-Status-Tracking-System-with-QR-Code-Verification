@@ -13,9 +13,14 @@ use App\Events\PaymentConfirmed;
 use App\Events\PermitReleased;
 use App\Listeners\SendStatusNotification;
 use App\Services\LogSmsChannel;
+use App\Services\ManualGateway;
 use App\Services\SandboxGateway;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -41,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(PaymentGateway::class, function ($app) {
             return match (config('permit.payment.mode')) {
+                'manual' => $app->make(ManualGateway::class),
                 'sandbox' => $app->make(SandboxGateway::class),
                 default => $app->make(SandboxGateway::class),
             };
@@ -62,5 +68,27 @@ class AppServiceProvider extends ServiceProvider
         foreach (self::STATUS_EVENTS as $event) {
             Event::listen($event, SendStatusNotification::class);
         }
+
+        $this->configureRateLimiting();
+    }
+
+    /**
+     * Separate buckets per endpoint. Plain `throttle:N,1` shares one per-IP
+     * counter across every throttled guest route, so e.g. scanning a few QR
+     * codes would lock the same device out of logging in.
+     */
+    private function configureRateLimiting(): void
+    {
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)
+            ->by('login|'.Str::lower((string) $request->input('email')).'|'.$request->ip()));
+
+        RateLimiter::for('track', fn (Request $request) => Limit::perMinute(6)
+            ->by('track|'.$request->ip()));
+
+        RateLimiter::for('verify', fn (Request $request) => Limit::perMinute(30)
+            ->by('verify|'.$request->ip()));
+
+        RateLimiter::for('webhook', fn (Request $request) => Limit::perMinute(30)
+            ->by('webhook|'.$request->ip()));
     }
 }

@@ -17,6 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureUserHasRole::class,
         ]);
 
+        // Signed-in users who open /login or /register go to their own
+        // role's dashboard (the framework default is /dashboard for everyone).
+        $middleware->redirectUsersTo(
+            fn (Request $request) => $request->user()?->homePath() ?? '/',
+        );
+
         // The simulated gateway webhook authenticates via HMAC signature, not a
         // session CSRF token, so it is excluded from CSRF verification.
         $middleware->validateCsrfTokens(except: [

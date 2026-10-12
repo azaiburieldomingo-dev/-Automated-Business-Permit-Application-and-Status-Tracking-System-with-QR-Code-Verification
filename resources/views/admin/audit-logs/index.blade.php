@@ -40,7 +40,7 @@
                 <tbody>
                     @forelse ($logs as $log)
                         <tr>
-                            <td>{{ $log->created_at?->format('M d, Y H:i') }}</td>
+                            <td>{{ $log->created_at?->format('M d, Y g:i A') }}</td>
                             <td>{{ $log->actor?->name ?? 'System' }}</td>
                             <td>{{ $log->action }}</td>
                             <td>{{ class_basename($log->subject_type ?? '') }} {{ $log->subject_id }}</td>

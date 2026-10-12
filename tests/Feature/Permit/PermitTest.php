@@ -69,7 +69,7 @@ class PermitTest extends TestCase
         $application = $this->makeApplication($this->makeApplicant(), Application::STATUS_PAYMENT_VERIFIED);
 
         $permit = app(PermitService::class)->release($application, $this->makeBplo());
-        $verifyUrl = rtrim((string) config('app.url'), '/').'/verify/'.$permit->verification_token;
+        $verifyUrl = $permit->verifyUrl();
 
         $this->assertMatchesRegularExpression(
             '#^https?://[^:]+(:\d+)?/verify/[A-Za-z0-9]+$#',

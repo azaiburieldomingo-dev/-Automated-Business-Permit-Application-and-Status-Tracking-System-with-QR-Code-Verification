@@ -30,64 +30,90 @@
 
     <div class="card">
         <h2>Requirements</h2>
-        <p class="muted">Allowed file types: {{ implode(', ', (array) config('permit.uploads.mimes')) }}. Max size: {{ config('permit.uploads.max_kb') }} KB.</p>
-        <div class="table-wrap">
-            <table class="data">
-                <thead>
-                    <tr>
-                        <th>Document</th>
-                        <th>Required</th>
-                        <th>Status</th>
-                        <th>Uploaded File</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <p class="muted">
+            Choose a file for each document, then click <strong>Upload All Requirements</strong> once.
+            Allowed: {{ implode(', ', (array) config('permit.uploads.mimes')) }}. Max {{ round(config('permit.uploads.max_kb') / 1024, 1) }} MB each.
+        </p>
+
+        {{-- One form for every document: pick files, upload them all together. --}}
+        <form method="POST" action="{{ route('applications.requirements.uploadMany', $application) }}" enctype="multipart/form-data">
+            @csrf
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Required</th>
+                            <th>Status</th>
+                            <th>Uploaded File</th>
+                            <th>Choose File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($requirementTypes as $type)
+                            @php($req = $application->requirements->firstWhere('requirement_type_id', $type->id))
+                            <tr>
+                                <td>
+                                    {{ $type->name }}
+                                    @if ($req && $req->correction_note)
+                                        <div class="field-error">Note: {{ $req->correction_note }}</div>
+                                    @endif
+                                </td>
+                                <td>{{ $type->is_required ? 'Yes' : 'Optional' }}</td>
+                                <td>
+                                    @if ($req)
+                                        <span class="badge {{ $req->checklist_status === 'COMPLETE' ? 'badge-green' : ($req->checklist_status === 'FOR_CORRECTION' ? 'badge-yellow' : 'badge-gray') }}">
+                                            {{ $req->checklist_status }}
+                                        </span>
+                                    @else
+                                        <span class="badge badge-gray">MISSING</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($req && $req->stored_path)
+                                        <a href="{{ route('requirements.file', $req) }}">{{ $req->original_filename }}</a>
+                                    @else
+                                        <span class="muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <input type="file" name="files[{{ $type->id }}]"
+                                           accept="{{ collect((array) config('permit.uploads.mimes'))->map(fn ($m) => '.'.$m)->implode(',') }}">
+                                    @error('files.'.$type->id) <div class="field-error">{{ $message }}</div> @enderror
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            @error('files') <div class="field-error" style="margin-top:10px">{{ $message }}</div> @enderror
+
+            <div style="margin-top:16px">
+                <button type="submit" class="btn btn-success">Upload All Requirements</button>
+                <span class="muted" style="margin-left:8px">You can upload now and add or replace files later.</span>
+            </div>
+        </form>
+
+        {{-- Remove buttons are separate (a form can't nest inside the upload form). --}}
+        @php($uploaded = $application->requirements->filter(fn ($r) => $r->stored_path))
+        @if ($uploaded->isNotEmpty())
+            <div style="margin-top:18px">
+                <h3>Remove an uploaded file</h3>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
                     @foreach ($requirementTypes as $type)
                         @php($req = $application->requirements->firstWhere('requirement_type_id', $type->id))
-                        <tr>
-                            <td>
-                                {{ $type->name }}
-                                @if ($req && $req->correction_note)
-                                    <div class="field-error">Note: {{ $req->correction_note }}</div>
-                                @endif
-                            </td>
-                            <td>{{ $type->is_required ? 'Yes' : 'Optional' }}</td>
-                            <td>
-                                @if ($req)
-                                    <span class="badge {{ $req->checklist_status === 'COMPLETE' ? 'badge-green' : ($req->checklist_status === 'FOR_CORRECTION' ? 'badge-yellow' : 'badge-gray') }}">
-                                        {{ $req->checklist_status }}
-                                    </span>
-                                @else
-                                    <span class="badge badge-gray">MISSING</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if ($req && $req->stored_path)
-                                    <a href="{{ route('requirements.file', $req) }}">{{ $req->original_filename }}</a>
-                                @else
-                                    <span class="muted">—</span>
-                                @endif
-                            </td>
-                            <td>
-                                <form method="POST" action="{{ route('applications.requirements.upload', [$application, $type]) }}" enctype="multipart/form-data" style="display:flex;gap:6px;align-items:center">
-                                    @csrf
-                                    <input type="hidden" name="requirement_type_id" value="{{ $type->id }}">
-                                    <input type="file" name="file" required>
-                                    <button type="submit" class="btn btn-sm">Upload</button>
-                                </form>
-                                @if ($req)
-                                    <form method="POST" action="{{ route('applications.requirements.remove', [$application, $type]) }}" class="inline-form" style="margin-top:6px">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
-                                    </form>
-                                @endif
-                            </td>
-                        </tr>
+                        @if ($req && $req->stored_path)
+                            <form method="POST" action="{{ route('applications.requirements.remove', [$application, $type]) }}"
+                                  onsubmit="return confirm('Remove the uploaded {{ $type->name }}?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger">Remove {{ $type->name }}</button>
+                            </form>
+                        @endif
                     @endforeach
-                </tbody>
-            </table>
-        </div>
+                </div>
+            </div>
+        @endif
     </div>
 @endsection

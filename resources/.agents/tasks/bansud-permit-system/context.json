@@ -1,0 +1,32 @@
+{
+  "project_type": "Laravel 13 monolith — Blade views + static CSS, no Node/Vite build",
+  "language": "PHP 8.3",
+  "build_system": "Composer 2.8.10 (Laragon on Windows). No npm/Node. Static CSS committed at public/css/app.css. Views are Blade templates referencing CDN Tailwind or the static CSS.",
+  "test_framework": "PHPUnit 12.5 via `php artisan test`. Feature tests use RefreshDatabase + SQLite in-memory.",
+  "build_command": "php artisan config:clear && php artisan route:list (confirms routes compile)",
+  "test_command": "php artisan test",
+  "verification_instructions": "1. `php artisan config:clear` 2. `php artisan migrate:fresh --seed` (all tables + seeded data, credentials printed) 3. `php artisan route:list` (all routes resolve) 4. `php artisan test` (full suite green) 5. `vendor\\bin\\pint --test` (code style)",
+  "snapshot_or_generated_files": "public/css/app.css is a committed static file, not generated. database/database.sqlite is the dev DB.",
+  "environment_constraints": "imagick extension NOT installed — QR must be SVG only (no PNG). No Node/npm/Vite — views must not reference vite() or mix(). QUEUE_CONNECTION=database with no worker — notification listeners must be synchronous. SQLite — no ->after(), no column drops in migrations. Path has a space: 'c:\\Users\\HP\\BUSINESS PERMIT_SYSTEM\\app' — always quote.",
+  "contribution_requirements": "No AGENTS.md or CONTRIBUTING.md. Follow Laravel conventions. Use config('permit.*') for all tunables — never hard-code municipality, prefix, or payment values. role column excluded from User fillable. All status changes through ApplicationWorkflowService (never directly). Use 'Bansud, Oriental Mindoro' — 'Bongabong' must appear NOWHERE.",
+  "key_patterns": "User model uses PHP 8 attributes (#[Fillable(...)], #[Hidden(...)]) and a casts() method — follow the same style. bootstrap/app.php is the middleware/routing config point (Laravel 13 style). config/permit.php is the single config source. The local disk root is storage/app/private (NOT symlinked to public).",
+  "relevant_files": [
+    "config/permit.php",
+    ".env",
+    ".env.example",
+    "composer.json",
+    "bootstrap/app.php",
+    "app/Models/User.php",
+    "routes/web.php",
+    "config/filesystems.php",
+    "config/database.php",
+    "database/migrations/0001_01_01_000000_create_users_table.php",
+    "database/migrations/0001_01_01_000001_create_cache_table.php",
+    "database/migrations/0001_01_01_000002_create_jobs_table.php",
+    "database/seeders/DatabaseSeeder.php",
+    "resources/views/welcome.blade.php",
+    ".agents/tasks/bansud-permit-system/design.md",
+    ".agents/tasks/bansud-permit-system/implementation-plan.md"
+  ],
+  "directory_structure": "Standard Laravel 13 structure: app/ (Models, Http/Controllers, Services, Policies, Events, Listeners, Exceptions, Contracts, Providers), bootstrap/app.php, config/, database/ (migrations, seeders, factories, database.sqlite), resources/views/, routes/web.php, public/ (index.php, css/), storage/app/private/ (uploads), tests/ (Feature, Unit), vendor/. No custom directories yet beyond .agents/tasks/."
+}

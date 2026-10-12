@@ -21,10 +21,10 @@ class PermitController extends Controller
 
         $this->authorize('download', $permit);
 
-        $verifyUrl = rtrim((string) config('app.url'), '/').'/verify/'.$permit->verification_token;
+        $verifyUrl = $permit->verifyUrl();
 
         // Inline SVG QR (rendered directly by simple-qrcode, not a data-URI).
-        $qrSvg = (string) QrCode::format('svg')->size(220)->generate($verifyUrl);
+        $qrSvg = (string) QrCode::format('svg')->size(220)->margin(1)->generate($verifyUrl);
 
         return view('permits.show', [
             'permit' => $permit,
@@ -43,9 +43,11 @@ class PermitController extends Controller
 
         $this->authorize('download', $permit);
 
-        // Regenerate the PDF on the fly if it was never cached.
-        if ($permit->pdf_path === null || ! Storage::disk('local')->exists($permit->pdf_path)) {
-            $permit->pdf_path = $permits->renderPdf($permit);
+        // Always render fresh so the QR uses the current public address (a
+        // cached PDF could still point at an old host such as localhost).
+        $path = $permits->renderPdf($permit);
+        if ($permit->pdf_path !== $path) {
+            $permit->pdf_path = $path;
             $permit->save();
         }
 

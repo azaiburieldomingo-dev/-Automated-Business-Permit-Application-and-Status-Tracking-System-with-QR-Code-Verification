@@ -44,7 +44,7 @@ class LoginController extends Controller
 
         $auditLogger->log('auth.login', $user, [], $user);
 
-        return redirect()->intended($this->homeFor(Auth::user()));
+        return redirect()->intended(Auth::user()->homePath());
     }
 
     public function destroy(): RedirectResponse
@@ -54,14 +54,5 @@ class LoginController extends Controller
         request()->session()->regenerateToken();
 
         return redirect('/');
-    }
-
-    private function homeFor(User $user): string
-    {
-        return match (true) {
-            $user->isAdmin() => '/admin/dashboard',
-            $user->isBplo() => '/bplo/dashboard',
-            default => '/dashboard',
-        };
     }
 }

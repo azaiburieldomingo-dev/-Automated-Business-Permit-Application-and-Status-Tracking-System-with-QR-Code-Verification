@@ -9,22 +9,23 @@
     </div>
 
     <div class="stat-grid">
-        <div class="stat-card"><div class="value">{{ $counts['active'] }}</div><div class="label">Active Permits</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['expired'] }}</div><div class="label">Expired Permits</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['revoked'] }}</div><div class="label">Revoked Permits</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['scans_today'] }}</div><div class="label">Scans Today</div></div>
+        <x-stat-card :value="$counts['active']" label="Active Permits" icon="✅" accent="green" />
+        <x-stat-card :value="$counts['expired']" label="Expired Permits" icon="⚠️" accent="amber" />
+        <x-stat-card :value="$counts['revoked']" label="Revoked Permits" icon="⛔" accent="red" />
+        <x-stat-card :value="$counts['scans_today']" label="Scans Today" icon="🔍" accent="mint" />
     </div>
 
     <div class="card">
-        <h2>Scan / Verify a Permit</h2>
+        <h2 class="section">Scan / Verify a Permit</h2>
         <p class="muted">Point a phone camera at the QR code on a permit to open its verification page, or paste the code below for manual entry.</p>
         <a href="{{ url('/verify') }}" class="btn btn-mint">Open Manual Verify</a>
     </div>
 
     <div class="card">
-        <h2>Recent Scans</h2>
+        <h2 class="section">Recent Scans</h2>
         @if ($recentScans->isEmpty())
-            <p class="muted">No scans recorded yet.</p>
+            <x-empty-state icon="🔍" title="No scans yet"
+                message="Each time a permit's QR code is verified, it will be logged here." />
         @else
             <div class="table-wrap">
                 <table class="data">

@@ -9,16 +9,17 @@
     </div>
 
     <div class="stat-grid">
-        <div class="stat-card"><div class="value">{{ $counts['awaiting'] }}</div><div class="label">Awaiting Verification</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['verified_today'] }}</div><div class="label">Verified Today</div></div>
-        <div class="stat-card"><div class="value">{{ $counts['total_verified'] }}</div><div class="label">Total Verified</div></div>
-        <div class="stat-card"><div class="value">&#8369;{{ number_format($counts['total_collected'], 2) }}</div><div class="label">Total Collected</div></div>
+        <x-stat-card :value="$counts['awaiting']" label="Awaiting Verification" icon="⏳" accent="amber" />
+        <x-stat-card :value="$counts['verified_today']" label="Verified Today" icon="✅" accent="green" />
+        <x-stat-card :value="$counts['total_verified']" label="Total Verified" icon="📑" accent="mint" />
+        <x-stat-card :value="'&#8369;'.number_format($counts['total_collected'], 2)" label="Total Collected" icon="💰" accent="green" />
     </div>
 
     <div class="card">
-        <h2>Payments Awaiting Verification</h2>
+        <h2 class="section">Payments Awaiting Verification</h2>
         @if ($pending->isEmpty())
-            <p class="muted">No payments are awaiting verification right now.</p>
+            <x-empty-state icon="💸" title="No payments to verify"
+                message="Payments submitted by applicants will appear here for you to confirm." />
         @else
             <div class="table-wrap">
                 <table class="data">

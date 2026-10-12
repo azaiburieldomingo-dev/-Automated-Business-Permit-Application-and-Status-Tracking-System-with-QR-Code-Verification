@@ -9,9 +9,12 @@
     </div>
 
     <div class="card">
-        <h2>Applications</h2>
+        <h2 class="section">Applications</h2>
         @if ($applications->isEmpty())
-            <p class="muted">You have no applications yet. Start by creating one.</p>
+            <x-empty-state icon="📝" title="No applications yet"
+                message="Start your first business permit application — it only takes a few minutes.">
+                <a href="{{ url('/applications/create') }}" class="btn">New Application</a>
+            </x-empty-state>
         @else
             <div class="table-wrap">
                 <table class="data">
@@ -30,7 +33,7 @@
                                 <td>{{ $application->tracking_number ?? '—' }}</td>
                                 <td>{{ $application->business_name }}</td>
                                 <td><x-status-badge :status="$application->status" /></td>
-                                <td>{{ $application->updated_at?->format('M d, Y H:i') }}</td>
+                                <td>{{ $application->updated_at?->format('M d, Y g:i A') }}</td>
                                 <td>
                                     @if (in_array($application->status, [\App\Models\Application::STATUS_DRAFT, \App\Models\Application::STATUS_FOR_CORRECTION]))
                                         <a href="{{ route('applications.edit', $application) }}" class="btn btn-sm btn-secondary">Edit</a>
@@ -46,16 +49,17 @@
     </div>
 
     <div class="card">
-        <h2>Notifications</h2>
+        <h2 class="section">Notifications</h2>
         @if ($notifications->isEmpty())
-            <p class="muted">No notifications.</p>
+            <x-empty-state icon="🔔" title="No notifications"
+                message="Status updates about your applications will show up here." />
         @else
             <ul class="timeline">
                 @foreach ($notifications as $notification)
                     <li>
                         <strong>{{ $notification->title }}</strong>
                         <div>{{ $notification->body }}</div>
-                        <div class="meta">{{ $notification->created_at?->format('M d, Y H:i') }}</div>
+                        <div class="meta">{{ $notification->created_at?->format('M d, Y g:i A') }}</div>
                     </li>
                 @endforeach
             </ul>

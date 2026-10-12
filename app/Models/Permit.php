@@ -35,6 +35,15 @@ class Permit extends Model
         ];
     }
 
+    /**
+     * The public verification link encoded in the QR code. Built from
+     * config('permit.public_url') so a phone can actually open it.
+     */
+    public function verifyUrl(): string
+    {
+        return rtrim((string) config('permit.public_url'), '/').'/verify/'.$this->verification_token;
+    }
+
     public function application(): BelongsTo
     {
         return $this->belongsTo(Application::class);

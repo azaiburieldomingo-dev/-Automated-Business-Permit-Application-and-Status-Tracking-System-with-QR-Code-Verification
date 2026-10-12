@@ -2,7 +2,7 @@
 
 @php
     $u = auth()->user();
-    $home = $u && $u->isAdmin() ? '/admin/dashboard' : ($u && $u->isBplo() ? '/bplo/dashboard' : '/dashboard');
+    $home = $u ? $u->homePath() : '/dashboard';
 @endphp
 
 <a href="{{ url($home) }}" class="bell" title="Notifications">

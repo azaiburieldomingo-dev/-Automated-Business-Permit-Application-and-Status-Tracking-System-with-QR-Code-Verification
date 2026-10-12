@@ -20,9 +20,33 @@
     @endif
 
     @if ($application->status === \App\Models\Application::STATUS_APPROVED_FOR_PAYMENT)
-        <div class="alert alert-success flex-between">
-            <span>Your application is approved. Please settle the fees to proceed.</span>
-            <a href="{{ route('applications.pay', $application) }}" class="btn btn-success">Pay Now</a>
+        @php
+            $rejected = $application->payments->sortByDesc('id')->first();
+            $rejected = $rejected && $rejected->status === 'FAILED' && $rejected->rejection_reason ? $rejected : null;
+        @endphp
+        @if ($rejected)
+            <div class="alert alert-error flex-between">
+                <span><strong>Your payment was not accepted.</strong> Reason: {{ $rejected->rejection_reason }}</span>
+                <a href="{{ route('applications.pay', $application) }}" class="btn btn-danger">Pay Again</a>
+            </div>
+        @else
+            <div class="alert alert-success flex-between">
+                <span>Your application is approved. Please settle the fees to proceed.</span>
+                <a href="{{ route('applications.pay', $application) }}" class="btn btn-success">Pay Now</a>
+            </div>
+        @endif
+    @endif
+
+    @if ($application->status === \App\Models\Application::STATUS_PAYMENT_PENDING)
+        <div class="alert alert-warning">
+            <strong>Payment received, waiting for verification.</strong>
+            The BPLO is checking your payment against the GCash, Maya, or QR Ph records. You'll get a notification once it is confirmed.
+        </div>
+    @endif
+
+    @if ($application->status === \App\Models\Application::STATUS_PAYMENT_VERIFIED)
+        <div class="alert alert-success">
+            <strong>Payment verified.</strong> The BPLO is preparing your Mayor's Permit. You'll be notified when it is released.
         </div>
     @endif
 
@@ -48,7 +72,7 @@
                         @if ($history->note)
                             <div>{{ $history->note }}</div>
                         @endif
-                        <div class="meta">{{ $history->created_at?->format('M d, Y H:i') }} @if($history->actor_role) · {{ ucfirst($history->actor_role) }} @endif</div>
+                        <div class="meta">{{ $history->created_at?->format('M d, Y g:i A') }} @if($history->actor_role) · {{ ucfirst($history->actor_role) }} @endif</div>
                     </li>
                 @endforeach
             </ul>
@@ -63,7 +87,7 @@
                     <li>
                         <span class="badge {{ $remark->type === 'REJECTION' ? 'badge-red' : 'badge-yellow' }}">{{ $remark->type }}</span>
                         <div>{{ $remark->body }}</div>
-                        <div class="meta">{{ $remark->created_at?->format('M d, Y H:i') }}</div>
+                        <div class="meta">{{ $remark->created_at?->format('M d, Y g:i A') }}</div>
                     </li>
                 @endforeach
             </ul>
@@ -83,7 +107,7 @@
                     <tbody>
                         @foreach ($application->payments->sortByDesc('created_at') as $payment)
                             <tr>
-                                <td>{{ $payment->created_at?->format('M d, Y H:i') }}</td>
+                                <td>{{ $payment->created_at?->format('M d, Y g:i A') }}</td>
                                 <td>{{ strtoupper($payment->method) }}</td>
                                 <td>&#8369;{{ number_format((float) $payment->amount, 2) }}</td>
                                 <td>{{ $payment->status }}</td>

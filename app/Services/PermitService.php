@@ -29,7 +29,8 @@ class PermitService
     public function release(Application $application, ?User $actor = null): Permit
     {
         if ($application->status !== Application::STATUS_PAYMENT_VERIFIED) {
-            Log::error('Permit release blocked: application not PAYMENT_VERIFIED.', [
+            // Expected guard (not a fault): release is refused until payment is verified.
+            Log::warning('Permit release blocked: application not PAYMENT_VERIFIED.', [
                 'application_id' => $application->getKey(),
                 'status' => $application->status,
             ]);
@@ -65,7 +66,7 @@ class PermitService
      */
     public function renderPdf(Permit $permit): string
     {
-        $verifyUrl = rtrim((string) config('app.url'), '/').'/verify/'.$permit->verification_token;
+        $verifyUrl = $permit->verifyUrl();
 
         $pdf = Pdf::loadView('permits.pdf', [
             'permit' => $permit,

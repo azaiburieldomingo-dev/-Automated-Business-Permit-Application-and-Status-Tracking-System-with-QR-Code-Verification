@@ -48,7 +48,7 @@
                 @foreach ($application->statusHistories as $history)
                     <li>
                         <strong>{{ $history->to_status }}</strong>
-                        <div class="meta">{{ $history->created_at?->format('M d, Y H:i') }}</div>
+                        <div class="meta">{{ $history->created_at?->format('M d, Y g:i A') }}</div>
                     </li>
                 @endforeach
             </ul>
@@ -62,7 +62,7 @@
                         <li>
                             <span class="badge {{ $remark->type === 'REJECTION' ? 'badge-red' : 'badge-yellow' }}">{{ $remark->type }}</span>
                             <div>{{ $remark->body }}</div>
-                            <div class="meta">{{ $remark->created_at?->format('M d, Y H:i') }}</div>
+                            <div class="meta">{{ $remark->created_at?->format('M d, Y g:i A') }}</div>
                         </li>
                     @endforeach
                 </ul>
@@ -94,6 +94,7 @@
 
     <div class="card" id="verify">
         <h2>Verify a Permit</h2>
-        <p class="muted">Scan the QR code on an issued Mayor's Permit to verify its authenticity, or open the verification link printed on the permit.</p>
+        <p class="muted">Scan the QR code on an issued Mayor's Permit to verify its authenticity, or enter the verification link printed on the permit.</p>
+        <a href="{{ route('verify.lookup') }}" class="btn btn-secondary">Verify Permit</a>
     </div>
 @endsection
