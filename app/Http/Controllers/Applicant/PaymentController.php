@@ -85,7 +85,7 @@ class PaymentController extends Controller
         }
 
         $message = PaymentMethods::isManual()
-            ? 'Payment details submitted. The BPLO will check your payment and confirm it. You will be notified once it is verified.'
+            ? 'Payment details submitted. The Treasurer will verify your GCash payment and confirm it. You will be notified once it is verified.'
             : 'Payment initiated. Your payment is being processed and will be confirmed shortly.';
 
         return redirect()

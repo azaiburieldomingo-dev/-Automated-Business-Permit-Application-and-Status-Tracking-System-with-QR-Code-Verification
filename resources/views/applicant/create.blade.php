@@ -12,7 +12,7 @@
         <p class="muted">Fill in your business details to create a draft. You'll upload requirements on the next step.</p>
         <form method="POST" action="{{ url('/applications') }}">
             @csrf
-            @include('applicant._form-fields', ['application' => null])
+            @include('applicant._form-fields', ['application' => $application ?? null])
             <button type="submit" class="btn">Save Draft &amp; Continue</button>
         </form>
     </div>
