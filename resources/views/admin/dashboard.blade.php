@@ -41,4 +41,30 @@
             </div>
         @endif
     </div>
+
+    {{-- Workflow overview: shows who acts at each step of the permit process. --}}
+    <div class="card">
+        <h2 class="section">Permit Process Overview</h2>
+        <p class="muted">The standard flow of every application and who is responsible at each step.</p>
+        <ol class="progress-steps">
+            <li class="progress-step"><span class="progress-dot">1</span>
+                <span class="progress-info"><span class="progress-label">Application Submitted</span>
+                <span class="progress-who">Applicant</span></span></li>
+            <li class="progress-step"><span class="progress-dot">2</span>
+                <span class="progress-info"><span class="progress-label">Review (Approve / Return / Reject)</span>
+                <span class="progress-who">BPLO</span></span></li>
+            <li class="progress-step"><span class="progress-dot">3</span>
+                <span class="progress-info"><span class="progress-label">Pay Fees (GCash)</span>
+                <span class="progress-who">Applicant</span></span></li>
+            <li class="progress-step"><span class="progress-dot">4</span>
+                <span class="progress-info"><span class="progress-label">Verify Payment</span>
+                <span class="progress-who">Treasurer</span></span></li>
+            <li class="progress-step"><span class="progress-dot">5</span>
+                <span class="progress-info"><span class="progress-label">Release Permit</span>
+                <span class="progress-who">BPLO</span></span></li>
+            <li class="progress-step"><span class="progress-dot">6</span>
+                <span class="progress-info"><span class="progress-label">Scan / Verify Permit (QR)</span>
+                <span class="progress-who">Inspector</span></span></li>
+        </ol>
+    </div>
 @endsection

@@ -121,4 +121,6 @@
             <p style="margin-top:12px"><a href="{{ route('applications.payments', $application) }}">View payment history</a></p>
         @endif
     </div>
+
+    <x-process-tracker :application="$application" viewer="applicant" />
 @endsection

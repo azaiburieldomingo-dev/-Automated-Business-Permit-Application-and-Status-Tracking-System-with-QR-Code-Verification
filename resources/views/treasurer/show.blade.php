@@ -81,6 +81,10 @@
         </div>
     @endif
 
+    @if ($application)
+        <x-process-tracker :application="$application" viewer="treasurer" />
+    @endif
+
     <div class="card">
         <h2>Actions</h2>
         @if ($payment->isAwaitingVerification())

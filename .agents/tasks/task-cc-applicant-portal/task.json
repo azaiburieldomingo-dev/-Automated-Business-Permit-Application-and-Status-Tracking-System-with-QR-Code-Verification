@@ -1,0 +1,7 @@
+{
+  "task_id": "task-cc-applicant-portal",
+  "task_description": "HEAVY feature build on the existing Laravel 13 Bansud business permit system: overhaul the applicant portal into a control center. Five parts — (A) dashboard control-center overhaul, (B) Business Profile wiring onto the dormant businesses table, (C) Account/Security Settings, (D) Renewal Reminder R1 (read-only, no application_type column), (E) Help/FAQ page. Implements the approved design cc-design.md iteration 5 without re-deciding architecture. Baseline 154 passed / 519 assertions must stay green; new tests added for Business Profile, Settings, Dashboard stats/fees/renewal, Help, and the payment-flash fix.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

@@ -78,5 +78,9 @@
         @endif
     </div>
 
+    @if ($permit->application)
+        <x-process-tracker :application="$permit->application" viewer="inspector" />
+    @endif
+
     <p><a href="{{ url('/inspector/permits') }}" class="btn btn-secondary">Back to Permits</a></p>
 @endsection

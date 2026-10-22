@@ -76,6 +76,8 @@
         </div>
     </div>
 
+    <x-process-tracker :application="$application" viewer="bplo" />
+
     <div class="card">
         <h2>Actions</h2>
 

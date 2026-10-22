@@ -1,0 +1,34 @@
+{
+  "verdict": "APPROVED",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "NIT",
+      "location": "cc-design.md §6.3 / §1 constraint 2",
+      "problem": "Rationale claims the PaymentController@start success flash appears 'on the exact event where the dashboard PAYMENT_PENDING callout appears', but start() redirects to applications.show, not /dashboard. The callout is only seen on a later dashboard visit.",
+      "fix": "Reword the rationale: the flash renders on the application-show redirect after a manual GCash submit, and the same Treasurer wording is echoed by the dashboard callout on the next dashboard visit; the two must agree. The §6.3 code edit (BPLO -> Treasurer) is correct and unchanged."
+    },
+    {
+      "id": 2,
+      "severity": "NIT",
+      "location": "cc-design.md §5.1 / §5.2",
+      "problem": "The renewal-reminder iteration source and permit filter are implied, not stated. Permit has no user() relation (only application()), so reminders must come from iterating the user's applications and reading each application->permit.",
+      "fix": "Add: build renewalReminders by iterating the eager-loaded $applications, taking $app->permit where non-null, status === Permit::STATUS_ACTIVE, and valid_until !== null; then compute daysLeft/expired. Uses the §2.1 eager loads, no extra query."
+    },
+    {
+      "id": 3,
+      "severity": "NIT",
+      "location": "cc-design.md §8 / §6.3 (config/permit.php payment.mode comment; Payment::isAwaitingVerification() docblock)",
+      "problem": "Stale 'BPLO verifies' wording lives in a config comment and a model docblock; the design classifies fixing them as optional. Correct (not applicant-visible), but flagged so the implementer does not mistake these for the constraint-2 fix (the live §6.3 flash is the real fix).",
+      "fix": "No correctness change required. If touched, update both comments to name the Treasurer; keep clearly optional, no behavior change."
+    },
+    {
+      "id": 4,
+      "severity": "NIT",
+      "location": "cc-design.md §3.2 (BusinessProfileRequest rules)",
+      "problem": "businesses migration makes name/address/barangay/nature/ownership_type NOT NULL; only dti_sec_* nullable. The design's required rules already match, but this is not called out, risking an implementer loosening nature/ownership_type to nullable and hitting a NOT NULL insert error.",
+      "fix": "Add a note next to the rules: these required rules are load-bearing because the columns are NOT NULL in the migration; keep name/address/barangay/nature/ownership_type required. No rule change needed."
+    }
+  ],
+  "reviewDoc": "c:\\Users\\HP\\BUSINESS PERMIT_SYSTEM\\app\\.agents\\tasks\\cc-design-review.md"
+}

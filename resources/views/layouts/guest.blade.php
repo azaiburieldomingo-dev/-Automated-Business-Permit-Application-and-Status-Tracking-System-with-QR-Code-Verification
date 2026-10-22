@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('permit.municipality').' — Business Permit System')</title>
-    <meta name="theme-color" content="#536978">
+    <meta name="theme-color" content="#112E81">
     <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
 </head>
 <body>

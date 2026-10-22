@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <title>Mayor's Permit — {{ $permit->permit_number }}</title>
     <style>
-        /* Palette: Cadet #536978 + Bone #EAE0C6 */
-        body { font-family: DejaVu Sans, sans-serif; color: #536978; margin: 0; padding: 40px; }
-        .header { text-align: center; border-bottom: 4px solid #C9B98E; padding-bottom: 12px; margin-bottom: 24px; }
-        .header h1 { font-size: 18px; margin: 0; color: #536978; }
-        .header h2 { font-size: 14px; margin: 4px 0; color: #6E828F; }
+        /* Palette: Navy #112E81 / Blue #4382DF / Light #AACCD6 */
+        body { font-family: DejaVu Sans, sans-serif; color: #112E81; margin: 0; padding: 40px; }
+        .header { text-align: center; border-bottom: 4px solid #4382DF; padding-bottom: 12px; margin-bottom: 24px; }
+        .header h1 { font-size: 18px; margin: 0; color: #112E81; }
+        .header h2 { font-size: 14px; margin: 4px 0; color: #4647AE; }
         .title { text-align: center; font-size: 20px; font-weight: bold; margin: 24px 0; letter-spacing: 2px;
-                 background: #536978; color: #EAE0C6; padding: 10px 0; }
+                 background: #112E81; color: #ffffff; padding: 10px 0; }
         table.details { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        table.details td { padding: 7px 8px; font-size: 12px; vertical-align: top; color: #2C353B; border-bottom: 1px solid #E8E0CE; }
-        table.details td.label { width: 180px; font-weight: bold; color: #536978; background: #F4EEDE; }
+        table.details td { padding: 7px 8px; font-size: 12px; vertical-align: top; color: #1b2340; border-bottom: 1px solid #DCEAF2; }
+        table.details td.label { width: 180px; font-weight: bold; color: #112E81; background: #EEF3FA; }
         .qr { position: fixed; top: 40px; right: 40px; width: 120px; height: 120px; }
         .qr img { width: 120px; height: 120px; }
         .footer { margin-top: 48px; font-size: 10px; color: #555; text-align: center; }
