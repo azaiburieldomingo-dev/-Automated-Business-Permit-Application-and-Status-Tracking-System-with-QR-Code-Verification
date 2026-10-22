@@ -8,10 +8,13 @@ use App\Http\Controllers\Admin\RequirementTypeController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Applicant\ApplicationController as ApplicantApplicationController;
+use App\Http\Controllers\Applicant\BusinessProfileController;
 use App\Http\Controllers\Applicant\DashboardController as ApplicantDashboardController;
+use App\Http\Controllers\Applicant\HelpController;
 use App\Http\Controllers\Applicant\PaymentController as ApplicantPaymentController;
 use App\Http\Controllers\Applicant\PermitController as ApplicantPermitController;
 use App\Http\Controllers\Applicant\RequirementController;
+use App\Http\Controllers\Applicant\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -105,6 +108,18 @@ Route::middleware(['auth', 'role:applicant'])->group(function (): void {
     Route::get('/applications/{application}/permit/download', [ApplicantPermitController::class, 'download'])->name('applications.permit.download');
 
     Route::get('/applications/{application}', [ApplicantApplicationController::class, 'show'])->name('applications.show');
+
+    // Business Profile (idempotent create-or-update of the user's one business).
+    Route::get('/business-profile', [BusinessProfileController::class, 'edit'])->name('business-profile.edit');
+    Route::put('/business-profile', [BusinessProfileController::class, 'update'])->name('business-profile.update');
+
+    // Account & security settings.
+    Route::get('/settings', [SettingsController::class, 'edit'])->name('settings');
+    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
+
+    // Help & support.
+    Route::get('/help', [HelpController::class, 'index'])->name('help');
 });
 
 /*

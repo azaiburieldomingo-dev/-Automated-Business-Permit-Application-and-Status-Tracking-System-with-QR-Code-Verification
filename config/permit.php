@@ -100,4 +100,31 @@ return [
         'mimes' => ['pdf', 'jpg', 'jpeg', 'png'],
         'max_kb' => 4096,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Renewal Reminder
+    |--------------------------------------------------------------------------
+    | How many days before a permit's validity expires the applicant portal
+    | begins reminding the owner to renew. Reference everywhere as
+    | config('permit.renewal.reminder_days', 30).
+    */
+    'renewal' => [
+        'reminder_days' => (int) env('PERMIT_RENEWAL_REMINDER_DAYS', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Help / Support Contact
+    |--------------------------------------------------------------------------
+    | BPLO office details surfaced on the applicant Help page. All default to
+    | null when the matching env key is absent; the view renders a muted
+    | "Not yet provided" rather than fabricating a value.
+    */
+    'support' => [
+        'office_hours' => env('BPLO_OFFICE_HOURS'),
+        'office_address' => env('BPLO_OFFICE_ADDRESS'),
+        'contact_phone' => env('BPLO_CONTACT_PHONE'),
+        'contact_email' => env('BPLO_CONTACT_EMAIL'),
+    ],
 ];
