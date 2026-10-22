@@ -90,6 +90,20 @@ class ManualPaymentTest extends TestCase
         $this->assertNull($application->permit);
     }
 
+    public function test_manual_start_flash_names_the_treasurer_not_the_bplo(): void
+    {
+        [$applicant, $application] = $this->approvedApplication();
+
+        $response = $this->actingAs($applicant)
+            ->post("/applications/{$application->getKey()}/pay", $this->payload())
+            ->assertRedirect(route('applications.show', $application))
+            ->assertSessionHas('success');
+
+        $flash = session('success');
+        $this->assertStringContainsString('Treasurer', $flash);
+        $this->assertStringNotContainsString('BPLO', $flash);
+    }
+
     public function test_reference_and_receipt_are_required(): void
     {
         [$applicant, $application] = $this->approvedApplication();

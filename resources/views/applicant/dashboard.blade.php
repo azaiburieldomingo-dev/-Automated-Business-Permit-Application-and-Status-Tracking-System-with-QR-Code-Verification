@@ -25,8 +25,10 @@
     {{-- (2) Renewal reminder banner(s) --}}
     @if ($renewalReminders->isNotEmpty())
         @foreach ($renewalReminders as $reminder)
-            @php($permit = $reminder['permit'])
-            @php($daysLeft = $reminder['daysLeft'])
+            @php
+                $permit = $reminder['permit'];
+                $daysLeft = $reminder['daysLeft'];
+            @endphp
             <div class="alert alert-warning">
                 <strong>Permit renewal reminder — {{ $reminder['application']->business_name }}.</strong>
                 Permit {{ $permit->permit_number }} (valid until {{ $permit->valid_until->format('M d, Y') }})
@@ -46,7 +48,9 @@
             <h2 class="section">Action needed</h2>
             @foreach ($actionNeeded as $application)
                 @if ($application->status === Application::STATUS_FOR_CORRECTION)
-                    @php($correction = $application->remarks->where('type', 'CORRECTION')->sortByDesc('created_at')->first())
+                    @php
+                        $correction = $application->remarks->where('type', 'CORRECTION')->sortByDesc('created_at')->first();
+                    @endphp
                     <div class="alert alert-warning">
                         <strong>Application {{ $application->tracking_number ?? '—' }} needs corrections.</strong>
                         @if ($correction)
